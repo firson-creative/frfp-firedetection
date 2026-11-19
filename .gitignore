@@ -13,13 +13,15 @@ venv.bak/
 
 # Virtual Environment
 .venv/
+backend/venv/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
 
-# Model artifacts (optional: keep if small, ignore if large)
-# ai_engine/models/*.keras
-# backend/app/models/*.keras
+# Large Raw NASA FIRMS Downloads (> 50MB)
+data/fire_archive_*.csv
+data/fire_nrt_*.csv
+*.zip
 
 # Node / Frontend
 frontend/node_modules/

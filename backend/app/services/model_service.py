@@ -1,37 +1,54 @@
 """
 backend/app/services/model_service.py
-Layanan Inferensi Model ANN-MLP Karhutla Riau dengan Fallback Cerdas (Sprint 1)
+Layanan Inferensi Model ANN-MLP Karhutla Riau (Mendukung .pkl & .keras)
 """
 
 import os
 import math
 from typing import Dict, Any, List
-from ..config import MODEL_PATH, SCALER_PATH
+from ..config import MODEL_KERAS_PATH, MODEL_PKL_PATH, SCALER_PATH
 from .geo import is_point_in_riau, get_riau_subregion
 
 class HotspotRiskModelService:
     def __init__(self):
         self.model = None
         self.scaler = None
+        self.model_type = None  # "SKLEARN_MLP" | "KERAS" | "RULE_BASED"
         self.is_loaded = False
         self.load_model()
 
     def load_model(self):
-        """Memuat artefak Keras dan Scaler jika file tersedia di disk."""
-        if os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH):
+        """Memuat artefak model (pkl atau keras) dan Scaler jika tersedia di disk."""
+        import joblib
+
+        # Prioritas 1: Scikit-Learn MLP PKL
+        if os.path.exists(MODEL_PKL_PATH) and os.path.exists(SCALER_PATH):
             try:
-                import joblib
+                self.scaler = joblib.load(SCALER_PATH)
+                self.model = joblib.load(MODEL_PKL_PATH)
+                self.model_type = "SKLEARN_MLP"
+                self.is_loaded = True
+                print(f"[OK] Model ANN-MLP Riau (.pkl) berhasil dimuat dari: {MODEL_PKL_PATH}")
+                return
+            except Exception as e:
+                print(f"[WARN] Gagal memuat model .pkl: {e}")
+
+        # Prioritas 2: Keras model
+        if os.path.exists(MODEL_KERAS_PATH) and os.path.exists(SCALER_PATH):
+            try:
                 from tensorflow import keras
                 self.scaler = joblib.load(SCALER_PATH)
-                self.model = keras.models.load_model(MODEL_PATH)
+                self.model = keras.models.load_model(MODEL_KERAS_PATH)
+                self.model_type = "KERAS"
                 self.is_loaded = True
-                print(f"[OK] Model ANN-MLP Riau berhasil dimuat dari: {MODEL_PATH}")
+                print(f"[OK] Model ANN-MLP Riau (.keras) berhasil dimuat dari: {MODEL_KERAS_PATH}")
+                return
             except Exception as e:
-                print(f"[WARN] Gagal memuat model Keras: {e}. Mengaktifkan mode estimasi presisi.")
-                self.is_loaded = False
-        else:
-            print("[INFO] Model artefak .keras belum ditemukan. Menggunakan mesin inferensi formula acuan PRD.")
-            self.is_loaded = False
+                print(f"[WARN] Gagal memuat model .keras: {e}")
+
+        print("[INFO] Model artefak biner belum ditemukan. Mengaktifkan mesin estimasi rumus PRD.")
+        self.model_type = "RULE_BASED"
+        self.is_loaded = False
 
     def predict_single(self, features: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -50,15 +67,18 @@ class HotspotRiskModelService:
         subregion = get_riau_subregion(lat, lon)
         delta_t = round(brightness - bright_t31, 2)
 
-        # Jika model Keras sudah di-train & di-load
         if self.is_loaded and self.model is not None and self.scaler is not None:
             import numpy as np
             raw_input = np.array([[lat, lon, brightness, scan, track, frp, bright_t31]])
             scaled_input = self.scaler.transform(raw_input)
-            prob = float(self.model.predict(scaled_input, verbose=0)[0][0])
+
+            if self.model_type == "SKLEARN_MLP":
+                # Scikit-Learn MLPClassifier output probability for class 1
+                prob = float(self.model.predict_proba(scaled_input)[0, 1])
+            else:
+                prob = float(self.model.predict(scaled_input, verbose=0)[0][0])
         else:
-            # Formula Acuan Resmi PRD dipetakan ke fungsi Sigmoid kontinu:
-            # Titik ambang: FRP = 15.0 MW atau delta_t = 25.0 K -> prob = 0.50
+            # Fallback Continuous Sigmoid dari Formula Ground Truth PRD
             frp_score = (frp - 15.0) / 10.0
             dt_score = (delta_t - 25.0) / 6.0
             z = max(frp_score, dt_score)
@@ -68,7 +88,7 @@ class HotspotRiskModelService:
         risk_class = "HIGH RISK" if prob >= 0.50 else "LOW RISK"
         risk_label = 1 if prob >= 0.50 else 0
 
-        # Penentuan Rekomendasi Aksi & Prioritas Audit (PRD Bab 1.2 & 5)
+        # Rekomendasi Aksi & Prioritas Audit (PRD Bab 1.2 & 5)
         if not in_riau:
             audit_priority = "Peringatan (Luar Riau)"
             recommendation = "Titik koordinat berada di luar wilayah percontohan Provinsi Riau."
@@ -102,4 +122,3 @@ class HotspotRiskModelService:
         }
 
 model_service = HotspotRiskModelService()
-

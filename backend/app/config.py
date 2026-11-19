@@ -22,7 +22,8 @@ RIAU_DEFAULT_CENTER = {
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "app", "models")
-MODEL_PATH = os.path.join(MODEL_DIR, "ann_model_riau.keras")
+MODEL_KERAS_PATH = os.path.join(MODEL_DIR, "ann_model_riau.keras")
+MODEL_PKL_PATH = os.path.join(MODEL_DIR, "ann_model_riau.pkl")
 SCALER_PATH = os.path.join(MODEL_DIR, "scaler_riau.pkl")
 
 DATABASE_PATH = os.path.join(BASE_DIR, "hotspots_riau.db")
