@@ -7,7 +7,6 @@ import {
   Zap,
   AlertTriangle,
   CheckCircle,
-  Info,
   MapPin,
   Thermometer,
   ShieldAlert,
@@ -36,89 +35,6 @@ export default function PredictPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const presets = [
-    {
-      name: "🔥 High Risk (Gambut Siak, Riau)",
-      desc: "FRP tinggi (38.6 MW) & ΔT signifikan (>60 K) di Riau (WIB)",
-      data: {
-        latitude: 0.6542,
-        longitude: 101.8921,
-        brightness: 355.2,
-        scan: 0.42,
-        track: 0.38,
-        frp: 38.6,
-        bright_t31: 292.4,
-        acq_date: "2026-11-20",
-        acq_time: "0630",
-        daynight: "D",
-      },
-    },
-    {
-      name: "🔥 High Risk (Pulang Pisau, Kalteng)",
-      desc: "Lahan gambut Kalteng, radiasi termal 35 MW (WIB)",
-      data: {
-        latitude: -2.2154,
-        longitude: 113.8245,
-        brightness: 352.0,
-        scan: 0.44,
-        track: 0.4,
-        frp: 35.8,
-        bright_t31: 293.4,
-        acq_date: "2026-11-20",
-        acq_time: "0545",
-        daynight: "D",
-      },
-    },
-    {
-      name: "🔥 High Risk (Merauke, Papua)",
-      desc: "Padang savana kering Papua Selatan, FRP 29.5 MW (WIT)",
-      data: {
-        latitude: -7.5021,
-        longitude: 140.4012,
-        brightness: 349.2,
-        scan: 0.46,
-        track: 0.41,
-        frp: 29.5,
-        bright_t31: 294.0,
-        acq_date: "2026-11-20",
-        acq_time: "0415",
-        daynight: "D",
-      },
-    },
-    {
-      name: "🌿 Low Risk (Pemantauan Jawa Barat)",
-      desc: "Suhu normal, FRP rendah 4.2 MW & delta T <15 K (WIB)",
-      data: {
-        latitude: -6.9175,
-        longitude: 107.6191,
-        brightness: 310.5,
-        scan: 0.38,
-        track: 0.36,
-        frp: 4.2,
-        bright_t31: 298.0,
-        acq_date: "2026-11-20",
-        acq_time: "1410",
-        daynight: "N",
-      },
-    },
-    {
-      name: "⚠️ Uji Titik Luar Wilayah Indonesia",
-      desc: "Uji validasi geografis di luar batas Sabang s.d. Merauke",
-      data: {
-        latitude: -15.5,
-        longitude: 130.0,
-        brightness: 345.0,
-        scan: 0.45,
-        track: 0.4,
-        frp: 30.0,
-        bright_t31: 295.0,
-        acq_date: "2026-11-20",
-        acq_time: "0600",
-        daynight: "D",
-      },
-    },
-  ];
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === "acq_date" || name === "acq_time" || name === "daynight") {
@@ -132,12 +48,6 @@ export default function PredictPage() {
         [name]: parseFloat(value) || 0,
       }));
     }
-  };
-
-  const handlePreset = (presetData: any) => {
-    setFormData(presetData);
-    setResult(null);
-    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,26 +80,6 @@ export default function PredictPage() {
           Simulasikan 7 parameter sensor VIIRS 375m beserta tanggal dan waktu perekaman untuk diklasifikasikan
           secara instan oleh model <strong>ANN-MLP (Akurasi 99.74%)</strong> di seluruh wilayah Indonesia.
         </p>
-      </div>
-
-      {/* Preset Buttons */}
-      <div className="liquid-glass-card p-4 rounded-xl space-y-2">
-        <div className="text-xs font-semibold text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5 text-emerald-400" /> Contoh Preset Skenario Uji Nasional:
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {presets.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handlePreset(p.data)}
-              className="text-left p-2.5 rounded-lg bg-black/40 hover:bg-emerald-950/60 border border-emerald-500/20 hover:border-emerald-400/50 transition group"
-            >
-              <div className="text-xs font-bold text-emerald-200 group-hover:text-emerald-300">{p.name}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{p.desc}</div>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Form Input Grid */}
