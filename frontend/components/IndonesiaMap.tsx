@@ -343,7 +343,11 @@ export default function IndonesiaMap({
                     {/* Regional & Timezone Banner */}
                     <div className="mt-2 text-xs font-semibold text-emerald-200 flex items-center gap-1.5">
                       <span>📍</span>
-                      <span>{p.province_region || p.subregion || "Indonesia"}</span>
+                      <span>
+                        {p.subregion && p.subregion !== p.province_region
+                          ? `${p.subregion}, ${p.province_region}`
+                          : (p.province_region || "Wilayah Indonesia")}
+                      </span>
                     </div>
 
                     {/* Acquisition Timestamp & Day/Night */}

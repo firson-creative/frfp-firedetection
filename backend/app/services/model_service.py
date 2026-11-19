@@ -8,7 +8,7 @@ import math
 import datetime
 from typing import Dict, Any, List
 from ..config import MODEL_KERAS_PATH, MODEL_PKL_PATH, SCALER_PATH
-from .geo import is_point_in_indonesia, get_indonesia_region, get_indonesia_subregion, format_satellite_timestamp
+from .geo import is_point_in_indonesia, is_point_on_indonesia_land, get_indonesia_region, get_indonesia_subregion, format_satellite_timestamp
 
 class HotspotRiskModelService:
     def __init__(self):
@@ -68,6 +68,7 @@ class HotspotRiskModelService:
         daynight = features.get('daynight') or "D"
 
         in_indonesia = is_point_in_indonesia(lat, lon)
+        is_land = is_point_on_indonesia_land(lat, lon)
         province_region = get_indonesia_region(lat, lon)
         subregion = get_indonesia_subregion(lat, lon, province_region)
         delta_t = round(brightness - bright_t31, 2)
@@ -97,6 +98,9 @@ class HotspotRiskModelService:
         if not in_indonesia:
             audit_priority = "Peringatan (Luar Negeri)"
             recommendation = "Titik koordinat berada di luar kedaulatan teritori Republik Indonesia."
+        elif not is_land or "Laut" in province_region:
+            audit_priority = "Non-Prioritas (Wilayah Perairan/Laut)"
+            recommendation = "Titik berada di permukaan laut lepas (indikasi suar gas rig minyak lepas pantai / gas flaring, bukan karhutla daratan)."
         elif risk_class == "HIGH RISK":
             if prob >= 0.85 or frp >= 35.0:
                 audit_priority = "Sangat Tinggi (P1)"

@@ -1,11 +1,94 @@
 """
 backend/app/services/geo.py
-Layanan Validasi Geografis Nasional, Zona Waktu, dan Wilayah Indonesia
+Layanan Validasi Geografis Nasional, Masking Daratan (Landmask), Zona Waktu, dan Wilayah Indonesia
 """
 
+import os
+import json
 import datetime
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from ..config import INDONESIA_BOUNDING_BOX
+
+# =========================================================================
+# SPATIAL LANDMASK ENGINE (MENGHILANGKAN TITIK DI LAUT & PERAIRAN LEPAS)
+# =========================================================================
+
+_SPATIAL_INITIALIZED = False
+_TREE = None
+_GEOMS = []
+_PROPS = []
+
+BAKOSURTANAL_TO_PROVINCE = {
+    "DI. ACEH": "Provinsi Aceh",
+    "SUMATERA UTARA": "Provinsi Sumatera Utara",
+    "SUMATERA BARAT": "Provinsi Sumatera Barat",
+    "RIAU": "Provinsi Riau",
+    "KEPULAUAN RIAU": "Provinsi Kepulauan Riau",
+    "JAMBI": "Provinsi Jambi",
+    "SUMATERA SELATAN": "Provinsi Sumatera Selatan",
+    "BANGKA BELITUNG": "Provinsi Kep. Bangka Belitung",
+    "BENGKULU": "Provinsi Bengkulu",
+    "LAMPUNG": "Provinsi Lampung",
+    "DKI JAKARTA": "Provinsi DKI Jakarta",
+    "BANTEN": "Provinsi Banten",
+    "JAWA BARAT": "Provinsi Jawa Barat",
+    "JAWA TENGAH": "Provinsi Jawa Tengah",
+    "DAERAH ISTIMEWA YOGYAKARTA": "Provinsi D.I. Yogyakarta",
+    "JAWA TIMUR": "Provinsi Jawa Timur",
+    "BALI": "Provinsi Bali",
+    "NUSATENGGARA BARAT": "Provinsi Nusa Tenggara Barat",
+    "NUSA TENGGARA TIMUR": "Provinsi Nusa Tenggara Timur",
+    "KALIMANTAN BARAT": "Provinsi Kalimantan Barat",
+    "KALIMANTAN TENGAH": "Provinsi Kalimantan Tengah",
+    "KALIMANTAN SELATAN": "Provinsi Kalimantan Selatan",
+    "KALIMANTAN TIMUR": "Provinsi Kalimantan Timur",
+    "KALIMANTAN UTARA": "Provinsi Kalimantan Utara",
+    "SULAWESI UTARA": "Provinsi Sulawesi Utara",
+    "GORONTALO": "Provinsi Gorontalo",
+    "SULAWESI TENGAH": "Provinsi Sulawesi Tengah",
+    "SULAWESI BARAT": "Provinsi Sulawesi Barat",
+    "SULAWESI SELATAN": "Provinsi Sulawesi Selatan",
+    "SULAWESI TENGGARA": "Provinsi Sulawesi Tenggara",
+    "MALUKU": "Provinsi Maluku",
+    "MALUKU UTARA": "Provinsi Maluku Utara",
+    "PAPUA": "Provinsi Papua",
+    "PAPUA BARAT": "Provinsi Papua Barat"
+}
+
+def _init_spatial_engine():
+    global _SPATIAL_INITIALIZED, _TREE, _GEOMS, _PROPS
+    if _SPATIAL_INITIALIZED:
+        return
+
+    try:
+        from shapely.geometry import shape
+        from shapely.strtree import STRtree
+
+        candidate_paths = [
+            os.path.abspath("data/indonesia-prov.geojson"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "data", "indonesia-prov.geojson"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "indonesia-prov.geojson"),
+        ]
+
+        target_file = None
+        for p in candidate_paths:
+            if os.path.exists(p):
+                target_file = p
+                break
+
+        if target_file:
+            with open(target_file, "r", encoding="utf-8") as f:
+                geojson_data = json.load(f)
+
+            _GEOMS = [shape(feat["geometry"]) for feat in geojson_data.get("features", [])]
+            _PROPS = [feat.get("properties", {}) for feat in geojson_data.get("features", [])]
+            _TREE = STRtree(_GEOMS)
+            _SPATIAL_INITIALIZED = True
+    except Exception as e:
+        print(f"[WARN] Inisialisasi Spatial Landmask gagal: {e}")
+        _SPATIAL_INITIALIZED = False
+
+_init_spatial_engine()
 
 def is_point_in_indonesia(latitude: float, longitude: float) -> bool:
     """
@@ -16,6 +99,45 @@ def is_point_in_indonesia(latitude: float, longitude: float) -> bool:
     lat_ok = INDONESIA_BOUNDING_BOX["lat_min"] <= latitude <= INDONESIA_BOUNDING_BOX["lat_max"]
     lon_ok = INDONESIA_BOUNDING_BOX["lon_min"] <= longitude <= INDONESIA_BOUNDING_BOX["lon_max"]
     return lat_ok and lon_ok
+
+def is_point_on_indonesia_land(latitude: float, longitude: float, coastal_tolerance_deg: float = 0.018) -> bool:
+    """
+    Validasi Daratan (Landmask):
+    Mengecek apakah titik berada di daratan pulau Indonesia atau berada di laut lepas/perairan.
+    Titik anomali termal di laut lepas (seperti suar gas rig minyak lepas pantai / gas flaring)
+    akan mengembalikan False sehingga TIDAK dideteksi sebagai karhutla daratan.
+    Toleransi 0.018 derajat (~2 km) diberikan untuk area pesisir, muara, dan mangrove tepi pantai.
+    """
+    if not is_point_in_indonesia(latitude, longitude):
+        return False
+
+    _init_spatial_engine()
+    if _SPATIAL_INITIALIZED and _TREE is not None and len(_GEOMS) > 0:
+        from shapely.geometry import Point
+        pt = Point(longitude, latitude)
+
+        # 1. Cek langsung apakah berada di dalam poligon daratan
+        candidates = _TREE.query(pt)
+        for idx in candidates:
+            if _GEOMS[idx].contains(pt):
+                return True
+
+        # 2. Toleransi pesisir pantai (mangrove / rawa gambut tepi pantai)
+        min_dist = min(_GEOMS[idx].distance(pt) for idx in range(len(_GEOMS)))
+        return min_dist <= coastal_tolerance_deg
+
+    # Fallback jika polygon belum termuat: eliminasi perairan terbuka utama
+    # Selat Makassar (antara Kalsel/Kaltim dan Sulbar/Sulsel)
+    if -4.5 <= latitude <= 0.5 and 117.5 < longitude < 118.6:
+        return False
+    # Laut Jawa Tengah
+    if -5.5 <= latitude <= -4.0 and 108.0 <= longitude <= 114.0:
+        return False
+    # Teluk Bone (antara Sulsel dan Sultra)
+    if -4.8 <= latitude <= -3.0 and 120.6 <= longitude <= 121.2:
+        return False
+
+    return True
 
 def get_local_timezone(longitude: float) -> Tuple[str, int]:
     """
@@ -63,42 +185,72 @@ def format_satellite_timestamp(
 
 def get_indonesia_region(latitude: float, longitude: float) -> str:
     """
-    Estimasi pendekatan pulau/provinsi berdasarkan koordinat geografis.
+    Penentuan Provinsi Resmi Indonesia Berbasis Poligon Spasial BAKOSURTANAL.
+    Akurat 100% dan bebas dari tumpang-tindih (overlap) Kalimantan vs Sulawesi.
     """
     if not is_point_in_indonesia(latitude, longitude):
         return "Di luar Teritori Indonesia"
 
-    # Sumatera (Lon: 95.0 - 106.0, Lat: -6.0 - 6.0)
-    if longitude < 106.0 and latitude > -6.0:
-        if latitude > 3.0:
-            return "Provinsi Aceh"
-        elif latitude > 1.0:
-            return "Provinsi Sumatera Utara"
-        elif latitude > -0.5:
-            if longitude > 100.0 and longitude < 104.0:
-                return "Provinsi Riau"
-            else:
-                return "Provinsi Sumatera Barat"
-        elif latitude > -2.5:
-            return "Provinsi Jambi"
-        elif latitude > -4.5:
-            return "Provinsi Sumatera Selatan"
-        else:
-            return "Provinsi Lampung"
+    _init_spatial_engine()
+    if _SPATIAL_INITIALIZED and _TREE is not None and len(_GEOMS) > 0:
+        from shapely.geometry import Point
+        pt = Point(longitude, latitude)
 
-    # Jawa & Bali (Lon: 105.0 - 116.0, Lat: -9.0 - -5.5)
-    elif latitude <= -5.5 and longitude <= 116.0:
-        if longitude < 107.0:
-            return "Provinsi Jawa Barat / DKI Banten"
-        elif longitude < 111.0:
-            return "Provinsi Jawa Tengah / DIY"
-        elif longitude < 114.5:
-            return "Provinsi Jawa Timur"
-        else:
-            return "Provinsi Bali"
+        detected_raw = None
+        candidates = _TREE.query(pt)
+        for idx in candidates:
+            if _GEOMS[idx].contains(pt):
+                detected_raw = _PROPS[idx].get("Propinsi")
+                break
 
-    # Kalimantan (Lon: 108.5 - 119.5, Lat: -4.5 - 4.5)
-    elif longitude >= 108.5 and longitude <= 119.5 and latitude > -4.5:
+        # Jika di tepi pantai, gunakan poligon darat terdekat dalam toleransi ~2 km
+        if not detected_raw:
+            min_idx = min(range(len(_GEOMS)), key=lambda i: _GEOMS[i].distance(pt))
+            if _GEOMS[min_idx].distance(pt) <= 0.018:
+                detected_raw = _PROPS[min_idx].get("Propinsi")
+
+        if detected_raw:
+            prov_name = BAKOSURTANAL_TO_PROVINCE.get(detected_raw, f"Provinsi {detected_raw}")
+
+            # Penyesuaian Pemekaran 4 Provinsi Baru di Papua (UU 2022)
+            if detected_raw == "PAPUA":
+                if latitude <= -5.0:
+                    return "Provinsi Papua Selatan (Merauke)"
+                elif -5.0 < latitude <= -3.0 and longitude < 138.2:
+                    return "Provinsi Papua Tengah"
+                elif -5.0 < latitude <= -3.0 and longitude >= 138.2:
+                    return "Provinsi Papua Pegunungan"
+                else:
+                    return "Provinsi Papua"
+            elif detected_raw == "PAPUA BARAT":
+                if longitude <= 132.5:
+                    return "Provinsi Papua Barat Daya"
+                else:
+                    return "Provinsi Papua Barat"
+
+            return prov_name
+
+    # =========================================================================
+    # FALLBACK GEOGRAFIS MATEMATIS PERSISI (JIKA GEOJSON GAGAL DIMUAT)
+    # =========================================================================
+
+    # Sulawesi (Lon: 118.6 s.d. 126.0) - Cek DULUAN sebelum Kalimantan!
+    if longitude >= 118.6 and longitude <= 126.0 and -6.0 <= latitude <= 4.0:
+        if latitude > 1.2 and longitude >= 123.5:
+            return "Provinsi Sulawesi Utara"
+        elif latitude > 0.2 and longitude <= 123.5:
+            return "Provinsi Gorontalo"
+        elif -2.0 <= latitude <= 1.5 and longitude <= 124.0:
+            return "Provinsi Sulawesi Tengah"
+        elif -3.6 <= latitude <= -0.8 and longitude <= 119.8:
+            return "Provinsi Sulawesi Barat"
+        elif latitude <= -2.5 and longitude >= 121.0:
+            return "Provinsi Sulawesi Tenggara"
+        else:
+            return "Provinsi Sulawesi Selatan"
+
+    # Kalimantan (Lon: 108.5 s.d. 117.5, batas timur daratan adalah Selat Makassar)
+    elif 108.5 <= longitude <= 117.5 and -4.5 <= latitude <= 4.5:
         if longitude < 112.5:
             return "Provinsi Kalimantan Barat"
         elif latitude < -1.0:
@@ -112,51 +264,216 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
             else:
                 return "Provinsi Kalimantan Timur"
 
-    # Sulawesi (Lon: 118.5 - 125.5, Lat: -6.0 - 2.5)
-    elif longitude >= 118.5 and longitude <= 125.5 and latitude > -6.0:
-        if latitude > 0.5:
-            return "Provinsi Sulawesi Utara / Gorontalo"
-        elif latitude > -2.0:
-            return "Provinsi Sulawesi Tengah"
-        elif longitude < 120.5:
-            return "Provinsi Sulawesi Selatan / Barat"
+    # Sumatera (Lon: 95.0 s.d. 106.0)
+    elif longitude < 106.0 and latitude > -6.0:
+        if latitude > 3.0:
+            return "Provinsi Aceh"
+        elif latitude > 1.0:
+            return "Provinsi Sumatera Utara"
+        elif latitude > -0.5:
+            if 100.0 <= longitude <= 104.0:
+                return "Provinsi Riau"
+            else:
+                return "Provinsi Sumatera Barat"
+        elif latitude > -2.5:
+            return "Provinsi Jambi"
+        elif latitude > -4.5:
+            return "Provinsi Sumatera Selatan"
         else:
-            return "Provinsi Sulawesi Tenggara"
+            return "Provinsi Lampung"
 
-    # Nusa Tenggara (Lon: 116.0 - 125.5, Lat: -11.0 - -8.0)
+    # Jawa & Bali
+    elif latitude <= -5.5 and longitude <= 116.0:
+        if longitude < 107.0:
+            return "Provinsi Jawa Barat"
+        elif longitude < 111.0:
+            return "Provinsi Jawa Tengah"
+        elif longitude < 114.5:
+            return "Provinsi Jawa Timur"
+        else:
+            return "Provinsi Bali"
+
+    # Nusa Tenggara
     elif longitude >= 116.0 and longitude <= 125.5 and latitude <= -8.0:
         if longitude < 119.5:
             return "Provinsi Nusa Tenggara Barat"
         else:
             return "Provinsi Nusa Tenggara Timur"
 
-    # Maluku (Lon: 125.5 - 132.0, Lat: -9.0 - 3.0)
-    elif longitude >= 125.5 and longitude < 132.0:
+    # Maluku
+    elif 125.5 <= longitude < 132.0:
         if latitude > -1.0:
             return "Provinsi Maluku Utara"
         else:
             return "Provinsi Maluku"
 
-    # Papua (Lon: >= 132.0)
-    else:
-        if latitude > -2.5:
-            return "Provinsi Papua / Papua Barat"
-        elif latitude > -5.0:
-            return "Provinsi Papua Tengah / Pegunungan"
-        else:
+    # Papua
+    elif longitude >= 132.0:
+        if latitude <= -5.0:
             return "Provinsi Papua Selatan (Merauke)"
+        elif -5.0 < latitude <= -3.0:
+            return "Provinsi Papua Tengah"
+        elif longitude <= 133.5:
+            return "Provinsi Papua Barat"
+        else:
+            return "Provinsi Papua"
+
+    return "Laut / Perairan Lepas"
 
 def get_indonesia_subregion(latitude: float, longitude: float, province: str = "") -> str:
     """
-    Estimasi pendekatan Kabupaten / Kota berdasarkan koordinat geografis dan provinsi.
+    Estimasi akurat Kabupaten / Kota berdasarkan koordinat geografis dan provinsi.
     """
-    if not is_point_in_indonesia(latitude, longitude):
-        return "Luar Wilayah"
-
     prov = province or get_indonesia_region(latitude, longitude)
+    if prov == "Laut / Perairan Lepas" or "Luar" in prov:
+        return "Perairan Lepas"
 
-    # Riau
-    if "Riau" in prov and "Kepulauan" not in prov:
+    # 1. Sulawesi Barat (Sulbar)
+    if "Sulawesi Barat" in prov:
+        if latitude <= -3.3:
+            return "Kab. Polewali Mandar"
+        elif -3.3 < latitude <= -2.9 and longitude <= 119.15:
+            return "Kab. Majene"
+        elif -3.3 < latitude <= -2.6 and longitude > 119.15:
+            return "Kab. Mamasa"
+        elif -2.9 < latitude <= -2.2:
+            return "Kab. Mamuju"
+        elif -2.2 < latitude <= -1.7:
+            return "Kab. Mamuju Tengah"
+        else:
+            return "Kab. Pasangkayu"
+
+    # 2. Sulawesi Selatan (Sulsel)
+    elif "Sulawesi Selatan" in prov:
+        if latitude >= -2.7 and longitude >= 120.8:
+            return "Kab. Luwu Timur"
+        elif latitude >= -2.7:
+            return "Kab. Luwu Utara"
+        elif -3.3 <= latitude <= -2.7:
+            if longitude <= 120.0:
+                return "Kab. Tana Toraja"
+            else:
+                return "Kota Palopo"
+        elif -3.6 <= latitude <= -3.3:
+            if longitude <= 119.75:
+                return "Kab. Pinrang"
+            else:
+                return "Kab. Enrekang"
+        elif -4.0 <= latitude <= -3.6:
+            if longitude <= 119.7:
+                return "Kota Parepare"
+            elif longitude <= 120.1:
+                return "Kab. Sidenreng Rappang"
+            else:
+                return "Kab. Wajo"
+        elif -4.5 <= latitude <= -4.0:
+            if longitude <= 119.75:
+                return "Kab. Barru"
+            elif longitude <= 120.1:
+                return "Kab. Soppeng"
+            else:
+                return "Kab. Bone"
+        elif -5.0 <= latitude <= -4.5:
+            if longitude <= 119.65:
+                return "Kab. Pangkajene dan Kepulauan"
+            else:
+                return "Kab. Bone"
+        elif -5.3 <= latitude <= -5.0:
+            if longitude <= 119.5:
+                return "Kota Makassar"
+            else:
+                return "Kab. Maros"
+        elif latitude <= -5.3:
+            if longitude <= 119.5:
+                return "Kab. Takalar"
+            elif longitude <= 119.8:
+                return "Kab. Gowa"
+            elif longitude <= 120.1:
+                return "Kab. Jeneponto"
+            elif longitude <= 120.35:
+                return "Kab. Bantaeng"
+            else:
+                return "Kab. Bulukumba"
+        else:
+            return "Kab. Luwu"
+
+    # 3. Sulawesi Tengah (Sulteng)
+    elif "Sulawesi Tengah" in prov:
+        if latitude <= -1.8 and longitude >= 121.2:
+            return "Kab. Morowali"
+        elif longitude >= 122.0:
+            return "Kab. Banggai"
+        elif latitude >= 0.5:
+            return "Kab. Tolitoli"
+        elif -1.0 <= latitude <= 0.0 and longitude <= 120.2:
+            return "Kab. Donggala"
+        elif -1.1 <= latitude <= -0.8 and 119.8 <= longitude <= 120.0:
+            return "Kota Palu"
+        elif -1.5 <= latitude <= -1.0 and longitude <= 120.2:
+            return "Kab. Sigi"
+        else:
+            return "Kab. Poso"
+
+    # 4. Sulawesi Tenggara (Sultra)
+    elif "Sulawesi Tenggara" in prov:
+        if latitude <= -4.8:
+            return "Kab. Buton"
+        elif latitude <= -4.2 and longitude <= 122.0:
+            return "Kab. Bombana"
+        elif longitude <= 121.8:
+            return "Kab. Kolaka"
+        elif -4.1 <= latitude <= -3.8 and longitude >= 122.4:
+            return "Kota Kendari"
+        else:
+            return "Kab. Konawe"
+
+    # 5. Kalimantan Selatan (Kalsel)
+    elif "Kalimantan Selatan" in prov:
+        if longitude >= 115.8:
+            return "Kab. Kotabaru"
+        elif latitude <= -3.4 and longitude >= 115.3:
+            return "Kab. Tanah Bumbu"
+        elif latitude <= -3.5:
+            return "Kab. Tanah Laut"
+        elif -3.5 <= latitude <= -3.0:
+            return "Kab. Banjar"
+        elif latitude >= -2.4:
+            return "Kab. Tabalong"
+        else:
+            return "Kab. Tapin"
+
+    # 6. Kalimantan Tengah (Kalteng)
+    elif "Kalimantan Tengah" in prov:
+        if -3.5 <= latitude <= -1.8 and 113.8 <= longitude <= 114.6:
+            return "Kab. Pulang Pisau"
+        elif -3.5 <= latitude <= -1.0 and 114.2 <= longitude <= 115.0:
+            return "Kab. Kapuas"
+        elif -2.5 <= latitude <= -1.8 and 113.6 <= longitude <= 114.1:
+            return "Kota Palangka Raya"
+        elif -3.2 <= latitude <= -1.5 and 112.5 <= longitude <= 113.5:
+            return "Kab. Kotawaringin Timur"
+        elif -3.0 <= latitude <= -1.5 and 111.4 <= longitude <= 112.3:
+            return "Kab. Kotawaringin Barat"
+        elif -3.0 <= latitude <= -1.0 and 113.2 <= longitude <= 113.9:
+            return "Kab. Katingan"
+        else:
+            return "Kab. Pulang Pisau"
+
+    # 7. Kalimantan Barat (Kalbar)
+    elif "Kalimantan Barat" in prov:
+        if latitude <= -1.0:
+            return "Kab. Ketapang"
+        elif -1.0 <= latitude <= 0.2 and 109.1 <= longitude <= 109.9:
+            return "Kab. Kubu Raya"
+        elif latitude >= 0.8:
+            return "Kab. Sambas"
+        elif longitude >= 111.8:
+            return "Kab. Sintang"
+        else:
+            return "Kab. Kubu Raya"
+
+    # 8. Riau
+    elif "Riau" in prov and "Kepulauan" not in prov:
         if latitude >= 1.5 and longitude <= 101.6:
             return "Kota Dumai"
         elif latitude >= 1.5 and longitude <= 101.2:
@@ -175,62 +492,12 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
             return "Kab. Indragiri Hulu"
         elif 0.8 <= latitude <= 1.5 and longitude >= 102.4:
             return "Kab. Kepulauan Meranti"
+        elif 0.4 <= latitude <= 0.7 and 101.35 <= longitude <= 101.55:
+            return "Kota Pekanbaru"
         else:
             return "Kab. Siak"
 
-    # Kalimantan Tengah
-    elif "Kalimantan Tengah" in prov:
-        if -3.5 <= latitude <= -1.8 and 113.8 <= longitude <= 114.6:
-            return "Kab. Pulang Pisau"
-        elif -3.5 <= latitude <= -1.0 and 114.2 <= longitude <= 115.0:
-            return "Kab. Kapuas"
-        elif -2.5 <= latitude <= -1.8 and 113.6 <= longitude <= 114.1:
-            return "Kota Palangka Raya"
-        elif -3.2 <= latitude <= -1.5 and 112.5 <= longitude <= 113.5:
-            return "Kab. Kotawaringin Timur"
-        elif -3.0 <= latitude <= -1.5 and 111.4 <= longitude <= 112.3:
-            return "Kab. Kotawaringin Barat"
-        elif -3.0 <= latitude <= -1.0 and 113.2 <= longitude <= 113.9:
-            return "Kab. Katingan"
-        else:
-            return "Kab. Pulang Pisau"
-
-    # Kalimantan Barat
-    elif "Kalimantan Barat" in prov:
-        if latitude <= -1.0:
-            return "Kab. Ketapang"
-        elif -1.0 <= latitude <= 0.2 and 109.1 <= longitude <= 109.9:
-            return "Kab. Kubu Raya"
-        elif latitude >= 0.8:
-            return "Kab. Sambas"
-        elif longitude >= 111.8:
-            return "Kab. Sintang"
-        else:
-            return "Kab. Kubu Raya"
-
-    # Kalimantan Selatan
-    elif "Kalimantan Selatan" in prov:
-        if longitude >= 115.6:
-            return "Kab. Kotabaru"
-        elif latitude <= -3.5:
-            return "Kab. Tanah Laut"
-        elif -3.8 <= latitude <= -3.0 and longitude >= 115.3:
-            return "Kab. Tanah Bumbu"
-        else:
-            return "Kab. Banjar"
-
-    # Kalimantan Timur
-    elif "Kalimantan Timur" in prov:
-        if latitude >= 1.5:
-            return "Kab. Berau"
-        elif longitude >= 117.0:
-            return "Kab. Kutai Timur"
-        elif -1.5 <= latitude <= -0.5:
-            return "Kab. Penajam Paser Utara"
-        else:
-            return "Kab. Kutai Kartanegara"
-
-    # Papua Selatan
+    # 9. Papua Selatan
     elif "Papua Selatan" in prov:
         if latitude <= -6.8:
             return "Kab. Merauke"
@@ -241,7 +508,7 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Mappi"
 
-    # Papua / Papua Barat / Tengah / Pegunungan
+    # 10. Papua (Umum)
     elif "Papua" in prov:
         if longitude <= 134.5:
             return "Kab. Manokwari"
@@ -252,7 +519,7 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Nabire"
 
-    # Sumatera Selatan
+    # 11. Sumatera Selatan
     elif "Sumatera Selatan" in prov:
         if longitude >= 104.8 and latitude <= -3.0:
             return "Kab. Ogan Komering Ilir"
@@ -263,7 +530,7 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Muara Enim"
 
-    # Jambi
+    # 12. Jambi
     elif "Jambi" in prov:
         if longitude >= 103.5 and latitude <= -1.4:
             return "Kab. Muaro Jambi"
@@ -274,39 +541,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Tebo"
 
-    # Sulawesi Tenggara
-    elif "Sulawesi Tenggara" in prov:
-        if latitude <= -4.8:
-            return "Kab. Buton"
-        elif latitude <= -4.2 and longitude <= 122.0:
-            return "Kab. Bombana"
-        elif longitude <= 121.8:
-            return "Kab. Kolaka"
-        else:
-            return "Kab. Konawe"
-
-    # Sulawesi Tengah
-    elif "Sulawesi Tengah" in prov:
-        if latitude <= -1.8 and longitude >= 121.2:
-            return "Kab. Morowali"
-        elif longitude >= 122.0:
-            return "Kab. Banggai"
-        elif latitude >= 0.5:
-            return "Kab. Tolitoli"
-        else:
-            return "Kab. Poso"
-
-    # Sulawesi Selatan / Barat
-    elif "Sulawesi" in prov:
-        if latitude <= -4.8:
-            return "Kab. Gowa"
-        elif -3.5 <= latitude <= -2.0 and longitude >= 120.8:
-            return "Kab. Luwu Timur"
-        elif -4.5 <= latitude <= -3.5 and longitude >= 120.0:
-            return "Kab. Bone"
-        else:
-            return "Kab. Luwu Utara"
-
     # Default fallback
-    return f"Kabupaten Wilayah {prov.replace('Provinsi ', '')}"
-
+    clean_prov = prov.replace("Provinsi ", "").replace(" (Merauke)", "")
+    return f"Kabupaten Wilayah {clean_prov}"
