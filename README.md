@@ -1,55 +1,66 @@
-# Prototipe Sistem Klasifikasi Risiko Titik Panas Karhutla (Provinsi Riau)
-**Berbasis Jaringan Syaraf Tiruan (ANN-MLP)**
+# FRFP — Fire Risk Foresight & Prioritization (v2.0 Nationwide)
+**Platform Kecerdasan Buatan Deteksi & Prakiraan Risiko Karhutla Skala Nasional Berbasis Jaringan Syaraf Tiruan (ANN-MLP)**
 
-Sistem full-stack untuk mengklasifikasikan titik panas satelit NASA FIRMS (VIIRS 375m) di Provinsi Riau ke dalam tingkat risiko **LOW RISK** dan **HIGH RISK** untuk prioritas patroli lapangan Manggala Agni dan audit kepatuhan lingkungan konsesi perkebunan (HGU/HTI).
+Sistem full-stack terintegrasi untuk mengklasifikasikan titik panas satelit NASA FIRMS (VIIRS 375m) di seluruh wilayah Indonesia (**Sabang s.d. Merauke, 38 Provinsi**) ke dalam tingkat risiko **LOW RISK** dan **HIGH RISK** guna pengarahan patroli lapangan Satgas Manggala Agni dan audit kepatuhan lingkungan Ditjen Gakkum KLHK.
 
 ---
 
-## 🏛️ Arsitektur Proyek
+## 🌟 Fitur Utama FRFP v2.0
+1. **Model JST Berkualitas Tinggi (ANN-MLP):**
+   - Dilatih pada **104.439 data riil satelit NASA FIRMS VIIRS (375m)**.
+   - Akurasi pengujian: **99.74%**, F1-Score: **0.9982** (20.888 data uji).
+2. **Cakupan Spasial Nasional (Sabang - Merauke):**
+   - Bounding Box: $-11.00^\circ \text{ s.d. } 6.00^\circ$ LU/LS dan $95.00^\circ \text{ s.d. } 141.00^\circ$ BT.
+   - Peta interaktif Leaflet dengan pemilih **38 Provinsi Indonesia** yang dikelompokkan per pulau (*flyTo camera navigation*).
+3. **Konversi Waktu Satelit Otomatis:**
+   - Menghitung waktu lokal Indonesia (**WIB, WITA, WIT**) secara dinamis berdasarkan bujur titik api.
+   - Indikator orbit siang/malam (☀️ Siang / 🌙 Malam).
+4. **Smart Hybrid Near-Realtime (NRT) Auto-Sync:**
+   - Mendukung API MAP_KEY NASA FIRMS live streaming dan simulator cerdas dari dataset lokal `fire_nrt_SV-C2_829694.csv`.
+   - Sakelar live stream periodik otomatis dan tombol *Sync NRT Now*.
+5. **Akselerasi & Fleksibilitas Audit:**
+   - Uji prediksi cepat instan (`/predict`).
+   - Ingesti batch CSV satelit dengan opsi penggantian data lama (`/ingest`).
+   - Lembar Surat Perintah Tugas verifikasi lapangan resmi siap cetak (`/priority-list`).
+   - Desain modern bernuansa **Emerald Green & Liquid Glass (Frosted Glassmorphism)**.
+
+---
+
+## 🏛️ Struktur Repositori
 ```text
 FRFP/
-├── ai_engine/          # (Person 1) Dataset, script filter Riau, training ANN-MLP, ekspor .keras & .pkl
-├── backend/            # (Person 2) FastAPI, Pydantic, filter spasial, database SQLite
-├── frontend/           # (Person 3) Next.js 14+ (App Router), Tailwind CSS, React-Leaflet
-├── data/               # Dataset raw dan hasil filter spasial Riau
-└── docs/               # PRD dan dokumentasi teknis
+├── ai_engine/          # Pelatihan model ANN-MLP (TensorFlow / Scikit-Learn) & artifact .pkl
+├── backend/            # FastAPI v2.0 REST API, geo timezone service, SQLite DB, model inference
+├── frontend/           # Next.js 14+ (App Router), Tailwind CSS, React-Leaflet, Emerald Liquid Glass
+├── data/               # Dataset raw NASA FIRMS (fire_archive & fire_nrt)
+├── run_system.bat      # 1-Click Runner: Menjalankan Backend (:8000) & Frontend (:3000)
+├── run_frontend.bat    # Runner khusus Frontend Next.js (:3000)
+└── README.md
 ```
 
 ---
 
-## 🎯 Pembagian Peran Tim (3 Orang)
-1. **Person 1 (AI & Data Science Lead):** Filtering data NASA FIRMS koordinat Riau, formula Ground Truth, training model ANN-MLP (7→64→32→1), evaluasi (F1-score, Confusion Matrix), export `ann_model_riau.keras` & `scaler_riau.pkl`.
-2. **Person 2 (Backend & System Lead):** FastAPI REST API, CORS middleware, skema Pydantic, spatial bounding check, endpoint `/predict`, `/predict-batch`, `/hotspots`, dan SQLite database.
-3. **Person 3 (Frontend & UI/UX Lead):** Next.js 14+ App Router, peta interaktif React-Leaflet (Pusat: Pekanbaru), formulir single prediction, upload batch CSV, dan cetak Surat Tugas PDF.
+## 🚀 Panduan Menjalankan Sistem
+
+### Cara Cepat (1-Click Runner di Windows):
+Cukup klik dua kali file:
+👉 **`run_system.bat`** (otomatis membuka Backend di port 8000 dan Frontend di port 3000).
 
 ---
 
-## 🚀 Quick Start
+### Cara Manual via Terminal:
 
-### 1. AI Engine (Person 1)
-```bash
-cd ai_engine
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python filter_riau_data.py --input ../data/fire_archive_SV-C2_sample.csv
-python train_ann.py
-```
-
-### 2. Backend API (Person 2)
+#### 1. Menjalankan Backend (FastAPI :8000)
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python run.py
 ```
-API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Akses API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 3. Frontend Dashboard (Person 3)
+#### 2. Menjalankan Frontend (Next.js :3000)
+Buka tab terminal baru:
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
-Dashboard: [http://localhost:3000](http://localhost:3000)
+- Akses Dashboard FRFP: [http://localhost:3000](http://localhost:3000)
