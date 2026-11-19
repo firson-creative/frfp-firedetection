@@ -6,13 +6,19 @@ Router Endpoint Prediksi Titik Panas Karhutla Riau (Single & Batch CSV)
 import io
 import csv
 from typing import List
-from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from ..schemas import HotspotInput, PredictionResponse, BatchPredictionResponse
 from ..services.model_service import model_service
 from ..services.geo import is_point_in_riau
-from ..services.database import insert_hotspot, insert_batch_hotspots
+from ..services.database import insert_hotspot, insert_batch_hotspots, clear_hotspots
 
 router = APIRouter(prefix="/api/v1", tags=["Prediction"])
+
+@router.post("/reset-db")
+def reset_hotspots_database():
+    """Menghapus semua riwayat hotspot dari basis data SQLite."""
+    clear_hotspots()
+    return {"status": "SUCCESS", "message": "Basis data hotspot berhasil di-reset menjadi kosong."}
 
 @router.post("/predict", response_model=PredictionResponse)
 def predict_single_hotspot(input_data: HotspotInput):
@@ -28,7 +34,10 @@ def predict_single_hotspot(input_data: HotspotInput):
     return result
 
 @router.post("/predict-batch", response_model=BatchPredictionResponse)
-async def predict_batch_csv(file: UploadFile = File(...)):
+async def predict_batch_csv(
+    file: UploadFile = File(...),
+    replace_existing: bool = Query(False, description="Hapus data lama sebelum mengimpor batch baru")
+):
     """
     Endpoint menerima upload file CSV satelit NASA FIRMS (VIIRS 375m),
     memfilter koordinat Provinsi Riau, menjalankan inferensi batch,
@@ -96,6 +105,8 @@ async def predict_batch_csv(file: UploadFile = File(...)):
 
     # Simpan batch ke SQLite
     if riau_predictions:
+        if replace_existing:
+            clear_hotspots()
         insert_batch_hotspots(riau_predictions)
 
     return BatchPredictionResponse(

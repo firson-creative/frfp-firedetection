@@ -8,13 +8,29 @@ import Link from "next/link";
 export default function IngestPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replaceExisting, setReplaceExisting] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setError(null);
+      setResetMessage(null);
+    }
+  };
+
+  const handleResetDb = async () => {
+    if (!confirm("Apakah Anda yakin ingin mengosongkan seluruh riwayat hotspot di basis data?")) {
+      return;
+    }
+    try {
+      await axios.post("http://localhost:8000/api/v1/reset-db");
+      setResetMessage("Basis data berhasil di-reset menjadi kosong.");
+      setResponse(null);
+    } catch (err: any) {
+      setError("Gagal mereset basis data.");
     }
   };
 
@@ -28,14 +44,19 @@ export default function IngestPage() {
     setUploading(true);
     setError(null);
     setResponse(null);
+    setResetMessage(null);
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/predict-batch", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await axios.post(
+        `http://localhost:8000/api/v1/predict-batch?replace_existing=${replaceExisting}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       setResponse(res.data);
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Gagal mengunggah dan memproses file CSV.");
@@ -80,14 +101,42 @@ export default function IngestPage() {
           </div>
         )}
 
-        <div className="flex justify-between items-center pt-2">
+        {resetMessage && (
+          <div className="p-3 bg-green-950/60 border border-green-500 rounded-lg text-green-300 text-xs flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-400" />
+            <span>{resetMessage}</span>
+          </div>
+        )}
+
+        {/* Opsi Timpa Data & Reset */}
+        <div className="p-3 bg-brand-darkBg/60 rounded-lg border border-brand-deepBlue/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <label className="flex items-center gap-2 text-xs text-gray-200 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={replaceExisting}
+              onChange={(e) => setReplaceExisting(e.target.checked)}
+              className="w-4 h-4 rounded bg-brand-darkBg border-brand-deepBlue text-brand-cyan focus:ring-brand-cyan"
+            />
+            <span>Timpa (ganti) data lama di database dengan batch ini saja</span>
+          </label>
+
+          <button
+            type="button"
+            onClick={handleResetDb}
+            className="text-xs text-red-400 hover:text-red-300 underline font-medium self-end sm:self-auto"
+          >
+            Kosongkan Database Hotspot
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
           <div className="text-xs text-gray-400">
-            💡 Tips: Anda dapat menguji dengan file sampel yang ada di folder <code className="text-brand-cyan font-mono">data/sample_firms_viirs.csv</code>
+            💡 Tips: File uji coba data riil tersedia di <code className="text-brand-cyan font-mono">data/riau_nrt_test.csv</code> (4.843 titik).
           </div>
           <button
             type="submit"
             disabled={!file || uploading}
-            className="px-6 py-2.5 bg-brand-cyan hover:bg-cyan-400 text-brand-navy font-bold text-sm rounded-lg shadow-md transition disabled:opacity-40 flex items-center gap-2"
+            className="w-full sm:w-auto px-6 py-2.5 bg-brand-cyan hover:bg-cyan-400 text-brand-navy font-bold text-sm rounded-lg shadow-md transition disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {uploading ? (
               <>

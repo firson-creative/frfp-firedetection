@@ -99,6 +99,15 @@ def insert_batch_hotspots(records: List[Dict[str, Any]]) -> int:
     conn.close()
     return count
 
+def clear_hotspots():
+    """Menghapus semua data hotspot dari tabel SQLite."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM hotspots;")
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='hotspots';")
+    conn.commit()
+    conn.close()
+
 def get_hotspots(risk_class: Optional[str] = None, limit: int = 500) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     cursor = conn.cursor()
