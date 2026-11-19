@@ -85,7 +85,10 @@ export default function PredictPage() {
       const res = await axios.post("http://localhost:8000/api/v1/predict", formData);
       setResult(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Gagal menghubungi server API.");
+      setError(
+        err?.response?.data?.detail ||
+          "Gagal menghubungi server backend di http://localhost:8000. Pastikan server backend sudah dijalankan di terminal dengan perintah: cd backend; python run.py"
+      );
     } finally {
       setLoading(false);
     }

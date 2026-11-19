@@ -29,18 +29,132 @@ export default function DashboardPage() {
   const [hotspots, setHotspots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRisk, setSelectedRisk] = useState<string>("ALL");
+  const [backendError, setBackendError] = useState<boolean>(false);
+
+  // Fallback data representatif Riau jika server backend belum dinyalakan
+  const fallbackHotspots = [
+    {
+      type: "Feature",
+      geometry: { coordinates: [101.8921, 0.6542] },
+      properties: {
+        id: 1,
+        latitude: 0.6542,
+        longitude: 101.8921,
+        brightness: 355.2,
+        frp: 38.6,
+        bright_t31: 292.4,
+        delta_t: 62.8,
+        probability: 0.9998,
+        risk_class: "HIGH RISK",
+        subregion: "Kab. Siak",
+        audit_priority: "Sangat Tinggi (P1)",
+        audit_status: "PENDING",
+        recommendation: "Prioritas Audit Khusus Gakkum & Dispatch Segera Regu Pemadam Manggala Agni.",
+        created_at: "2026-11-19 22:00:00"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { coordinates: [102.1524, 0.2851] },
+      properties: {
+        id: 2,
+        latitude: 0.2851,
+        longitude: 102.1524,
+        brightness: 348.6,
+        frp: 26.4,
+        bright_t31: 294.0,
+        delta_t: 54.6,
+        probability: 0.9995,
+        risk_class: "HIGH RISK",
+        subregion: "Kab. Pelalawan",
+        audit_priority: "Sangat Tinggi (P1)",
+        audit_status: "PENDING",
+        recommendation: "Verifikasi patroli darat dan jadwal audit kepatuhan konsesi terdekat.",
+        created_at: "2026-11-19 22:05:00"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { coordinates: [101.4478, 0.5071] },
+      properties: {
+        id: 3,
+        latitude: 0.5071,
+        longitude: 101.4478,
+        brightness: 312.4,
+        frp: 6.2,
+        bright_t31: 298.1,
+        delta_t: 14.3,
+        probability: 0.0012,
+        risk_class: "LOW RISK",
+        subregion: "Kota Pekanbaru",
+        audit_priority: "Rendah (P3)",
+        audit_status: "VERIFIED",
+        recommendation: "Pemantauan satelit berkala, tidak mendesak untuk intervensi fisik saat ini.",
+        created_at: "2026-11-19 22:10:00"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { coordinates: [101.1245, 0.2315] },
+      properties: {
+        id: 4,
+        latitude: 0.2315,
+        longitude: 101.1245,
+        brightness: 308.5,
+        frp: 4.2,
+        bright_t31: 298.0,
+        delta_t: 10.5,
+        probability: 0.0005,
+        risk_class: "LOW RISK",
+        subregion: "Kab. Kampar",
+        audit_priority: "Rendah (P3)",
+        audit_status: "VERIFIED",
+        recommendation: "Pemantauan satelit berkala, tidak mendesak untuk intervensi fisik saat ini.",
+        created_at: "2026-11-19 22:15:00"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { coordinates: [101.4500, 1.6800] },
+      properties: {
+        id: 5,
+        latitude: 1.6800,
+        longitude: 101.4500,
+        brightness: 351.2,
+        frp: 31.0,
+        bright_t31: 293.1,
+        delta_t: 58.1,
+        probability: 0.9997,
+        risk_class: "HIGH RISK",
+        subregion: "Kota Dumai",
+        audit_priority: "Sangat Tinggi (P1)",
+        audit_status: "PENDING",
+        recommendation: "Prioritas patroli udara dan audit batas konsesi gambut.",
+        created_at: "2026-11-19 22:20:00"
+      }
+    }
+  ];
 
   const fetchData = async () => {
     setLoading(true);
+    setBackendError(false);
     try {
       const [statsRes, geoRes] = await Promise.all([
-        axios.get("http://localhost:8000/api/v1/stats"),
-        axios.get("http://localhost:8000/api/v1/hotspots?limit=500"),
+        axios.get("http://localhost:8000/api/v1/stats", { timeout: 3500 }),
+        axios.get("http://localhost:8000/api/v1/hotspots?limit=500", { timeout: 3500 }),
       ]);
       setStats(statsRes.data);
       setHotspots(geoRes.data.features || []);
     } catch (err) {
-      console.error("Gagal memuat data dari server FastAPI:", err);
+      console.warn("Server backend belum aktif, menggunakan data contoh representatif Riau:", err);
+      setBackendError(true);
+      setStats({
+        total_hotspots: 5,
+        high_risk_count: 3,
+        low_risk_count: 2,
+        pending_audit_high_risk: 3
+      });
+      setHotspots(fallbackHotspots);
     } finally {
       setLoading(false);
     }
@@ -88,6 +202,23 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {backendError && (
+        <div className="bg-yellow-950/60 border border-yellow-500/50 p-4 rounded-xl text-yellow-200 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+            <span>
+              <strong>Backend FastAPI (:8000) belum terhubung:</strong> Menampilkan data titik contoh Riau. Untuk menghubungkan ke database dan model ANN nyata, jalankan: <code className="bg-black/40 px-1.5 py-0.5 rounded font-mono text-brand-cyan">cd backend; python run.py</code>
+            </span>
+          </div>
+          <button
+            onClick={fetchData}
+            className="px-2.5 py-1 bg-yellow-600 hover:bg-yellow-500 text-white rounded font-semibold text-[11px] whitespace-nowrap"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
 
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
