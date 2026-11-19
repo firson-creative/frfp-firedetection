@@ -13,35 +13,56 @@ import {
   Calendar,
   Clock,
   Compass,
+  Cpu,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function IngestPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [fileSizeStr, setFileSizeStr] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const f = e.target.files[0];
+      setFile(f);
+      setFileSizeStr(formatBytes(f.size));
       setError(null);
       setResetMessage(null);
     }
   };
 
   const handleResetDb = async () => {
-    if (!confirm("Apakah Anda yakin ingin mengosongkan seluruh riwayat hotspot di basis data?")) {
+    if (!confirm("Apakah Anda yakin ingin mengosongkan seluruh riwayat titik panas di basis data?")) {
       return;
     }
+    setIsResetting(true);
+    setError(null);
+    setResetMessage(null);
+
     try {
-      await axios.post("http://localhost:8000/api/v1/reset-db");
-      setResetMessage("Basis data berhasil di-reset menjadi kosong (0 titik).");
+      const res = await axios.post("http://localhost:8000/api/v1/reset-db", {}, { timeout: 15000 });
+      setResetMessage(res.data?.message || "Basis data berhasil di-reset menjadi kosong (0 titik).");
       setResponse(null);
     } catch (err: any) {
-      setError("Gagal mereset basis data.");
+      const detail = err?.response?.data?.detail || err?.message || "Koneksi ke backend gagal.";
+      setError(`Gagal mengosongkan database: ${detail}. Pastikan Backend aktif di port 8000.`);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -66,11 +87,16 @@ export default function IngestPage() {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
+          timeout: 180000, // 3 minutes timeout for huge datasets (up to 1M rows)
         }
       );
       setResponse(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Gagal mengunggah dan memproses file CSV.");
+      const detail =
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Gagal mengunggah dan memproses file CSV. Pastikan Backend di port 8000 aktif.";
+      setError(`Error Pemrosesan: ${detail}`);
     } finally {
       setUploading(false);
     }
@@ -84,24 +110,63 @@ export default function IngestPage() {
           <UploadCloud className="w-6 h-6 text-emerald-400" /> Ingesti Batch Data Satelit NASA FIRMS
         </h1>
         <p className="text-sm text-emerald-100/70 mt-1">
-          Unggah rekaman data titik panas satelit VIIRS 375m (format <code>.csv</code>). Sistem secara serempak
-          akan memvalidasi koordinat seluruh Indonesia (Sabang s.d. Merauke), menghitung waktu lokal (WIB/WITA/WIT),
-          dan mengklasifikasikan tingkat risiko dengan model <strong>ANN-MLP</strong>.
+          Unggah rekaman data titik panas satelit VIIRS 375m (format <code>.csv</code>). Mesin komputasi vektor
+          baru mampu memproses file besar (hingga 1.000.000 baris) dalam hitungan detik untuk seluruh wilayah Indonesia.
         </p>
       </div>
+
+      {/* Database Management Bar */}
+      <div className="liquid-glass-card p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <Trash2 className="w-4 h-4 text-red-400" />
+          <span className="text-gray-300 font-semibold">Manajemen Basis Data Hotspot:</span>
+          <span className="text-gray-400 hidden md:inline">
+            Gunakan untuk mengosongkan data jika ingin memulai analisis bersih.
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleResetDb}
+          disabled={isResetting || uploading}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 rounded-lg transition text-xs font-bold disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
+          {isResetting ? "Mengosongkan..." : "Kosongkan Basis Data (Reset to 0)"}
+        </button>
+      </div>
+
+      {resetMessage && (
+        <div className="p-3.5 bg-emerald-950/80 border border-emerald-400 rounded-xl text-emerald-200 text-xs flex items-center gap-2 animate-fade-in shadow-glass-emerald">
+          <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{resetMessage}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3.5 bg-red-950/80 border border-red-500 rounded-xl text-red-200 text-xs flex items-center gap-2 animate-fade-in">
+          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Upload Box */}
       <form onSubmit={handleUpload} className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-5">
         <div className="border-2 border-dashed border-emerald-500/30 hover:border-emerald-400/70 rounded-xl p-8 text-center transition flex flex-col items-center justify-center bg-black/40">
           <FileSpreadsheet className="w-12 h-12 text-emerald-400 mb-3" />
-          <p className="text-sm font-semibold text-gray-200">
-            {file ? file.name : "Pilih atau Seret File CSV NASA FIRMS (VIIRS 375m) ke sini"}
+          <p className="text-sm font-bold text-gray-200">
+            {file ? (
+              <span className="text-emerald-300">
+                {file.name} <span className="text-xs text-gray-400 font-normal">({fileSizeStr})</span>
+              </span>
+            ) : (
+              "Pilih atau Seret File CSV NASA FIRMS (VIIRS 375m) ke sini"
+            )}
           </p>
           <p className="text-xs text-emerald-200/60 mt-1">
-            Kolom wajib: <code>latitude, longitude, brightness, scan, track, frp, bright_t31</code>
+            Kolom sensor: <code>latitude, longitude, brightness, scan, track, frp, bright_t31</code>
           </p>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            Kolom opsional temporal: <code>acq_date, acq_time, daynight</code>
+            Kolom temporal: <code>acq_date, acq_time, daynight</code>
           </p>
 
           <label className="mt-4 cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-glass-emerald">
@@ -110,43 +175,18 @@ export default function IngestPage() {
           </label>
         </div>
 
-        {error && (
-          <div className="p-3 bg-red-950/70 border border-red-500 rounded-xl text-red-200 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {resetMessage && (
-          <div className="p-3 bg-emerald-950/70 border border-emerald-500 rounded-xl text-emerald-200 text-xs flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
-            <span>{resetMessage}</span>
-          </div>
-        )}
-
         {/* Options Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-emerald-500/20 text-xs">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="replace"
-              checked={replaceExisting}
-              onChange={(e) => setReplaceExisting(e.target.checked)}
-              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-black/50 border-emerald-500/40 cursor-pointer"
-            />
-            <label htmlFor="replace" className="text-gray-300 cursor-pointer">
-              Gantikan data lama di database (Reset sebelum simpan batch baru)
-            </label>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleResetDb}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/50 hover:bg-red-900/60 text-red-300 border border-red-500/30 rounded-lg transition text-xs font-medium"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Kosongkan Database Hotspot
-          </button>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-black/30 border border-emerald-500/10 text-xs">
+          <input
+            type="checkbox"
+            id="replace"
+            checked={replaceExisting}
+            onChange={(e) => setReplaceExisting(e.target.checked)}
+            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-black/50 border-emerald-500/40 cursor-pointer"
+          />
+          <label htmlFor="replace" className="text-gray-300 cursor-pointer font-medium">
+            Gantikan data lama di database (Otomatis bersihkan database sebelum mengimpor file ini)
+          </label>
         </div>
 
         <button
@@ -157,7 +197,7 @@ export default function IngestPage() {
           {uploading ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Memproses Klasifikasi JST Seluruh Titik...</span>
+              <span>Memproses Klasifikasi JST Berkecepatan Tinggi (Vectorized Stream)...</span>
             </>
           ) : (
             <>
@@ -187,7 +227,9 @@ export default function IngestPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="liquid-glass-card p-3 rounded-xl">
               <span className="text-[11px] text-gray-400">Total Baris File</span>
-              <div className="text-2xl font-bold text-white font-mono mt-1">{response.total_uploaded.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-white font-mono mt-1">
+                {response.total_uploaded.toLocaleString()}
+              </div>
             </div>
             <div className="liquid-glass-card p-3 rounded-xl">
               <span className="text-[11px] text-emerald-300">Wilayah Indonesia</span>

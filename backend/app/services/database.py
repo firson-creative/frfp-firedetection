@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from ..config import DATABASE_PATH
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = sqlite3.connect(DATABASE_PATH, timeout=25.0)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -110,38 +110,51 @@ def insert_hotspot(record: Dict[str, Any]) -> int:
     return record_id
 
 def insert_batch_hotspots(records: List[Dict[str, Any]]) -> int:
+    if not records:
+        return 0
+
     conn = get_db_connection()
     cursor = conn.cursor()
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    count = 0
 
+    tuple_rows = []
     for r in records:
-        cursor.execute("""
-        INSERT INTO hotspots (
-            latitude, longitude, brightness, scan, track, frp, bright_t31,
-            delta_t, probability, risk_class, risk_label, is_indonesia, province_region,
-            acq_date, acq_time, daynight, local_time_str,
-            audit_priority, audit_status, recommendation, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """, (
-            r['latitude'], r['longitude'], r['brightness'], r['scan'], r['track'], r['frp'], r['bright_t31'],
-            r['delta_t'], r['probability'], r['risk_class'], r['risk_label'],
+        tuple_rows.append((
+            float(r['latitude']),
+            float(r['longitude']),
+            float(r['brightness']),
+            float(r['scan']),
+            float(r['track']),
+            float(r['frp']),
+            float(r['bright_t31']),
+            float(r['delta_t']),
+            float(r['probability']),
+            str(r['risk_class']),
+            int(r['risk_label']),
             1 if r.get('is_indonesia', True) else 0,
-            r.get('province_region', 'Indonesia'),
-            r.get('acq_date', datetime.date.today().isoformat()),
-            r.get('acq_time', '0000'),
-            r.get('daynight', 'D'),
-            r.get('local_time_str', 'WIB'),
-            r.get('audit_priority', 'Sedang'),
-            r.get('audit_status', 'PENDING'),
-            r.get('recommendation', ''),
-            r.get('created_at') or now
+            str(r.get('province_region', 'Indonesia')),
+            str(r.get('acq_date') or datetime.date.today().isoformat()),
+            str(r.get('acq_time') or '0000'),
+            str(r.get('daynight') or 'D'),
+            str(r.get('local_time_str') or 'WIB'),
+            str(r.get('audit_priority') or 'Sedang'),
+            str(r.get('audit_status') or 'PENDING'),
+            str(r.get('recommendation') or ''),
+            str(r.get('created_at') or now)
         ))
-        count += 1
+
+    cursor.executemany("""
+    INSERT INTO hotspots (
+        latitude, longitude, brightness, scan, track, frp, bright_t31,
+        delta_t, probability, risk_class, risk_label, is_indonesia, province_region,
+        acq_date, acq_time, daynight, local_time_str,
+        audit_priority, audit_status, recommendation, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    """, tuple_rows)
 
     conn.commit()
     conn.close()
-    return count
+    return len(tuple_rows)
 
 def get_hotspots(
     risk_class: Optional[str] = None,
