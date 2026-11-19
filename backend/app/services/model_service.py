@@ -8,7 +8,7 @@ import math
 import datetime
 from typing import Dict, Any, List
 from ..config import MODEL_KERAS_PATH, MODEL_PKL_PATH, SCALER_PATH
-from .geo import is_point_in_indonesia, get_indonesia_region, format_satellite_timestamp
+from .geo import is_point_in_indonesia, get_indonesia_region, get_indonesia_subregion, format_satellite_timestamp
 
 class HotspotRiskModelService:
     def __init__(self):
@@ -69,6 +69,7 @@ class HotspotRiskModelService:
 
         in_indonesia = is_point_in_indonesia(lat, lon)
         province_region = get_indonesia_region(lat, lon)
+        subregion = get_indonesia_subregion(lat, lon, province_region)
         delta_t = round(brightness - bright_t31, 2)
         local_time_str = format_satellite_timestamp(acq_date, acq_time, lon, daynight)
 
@@ -121,6 +122,7 @@ class HotspotRiskModelService:
             "risk_label": risk_label,
             "is_indonesia": in_indonesia,
             "province_region": province_region,
+            "subregion": subregion,
             "acq_date": acq_date,
             "acq_time": acq_time,
             "daynight": daynight,

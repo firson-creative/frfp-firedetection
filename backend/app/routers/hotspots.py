@@ -14,13 +14,14 @@ router = APIRouter(prefix="/api/v1", tags=["Hotspots & GIS"])
 def get_hotspots_geojson(
     risk_class: Optional[str] = Query(None, description="Filter kelas risiko: 'HIGH RISK' atau 'LOW RISK'"),
     province: Optional[str] = Query(None, description="Filter nama provinsi / wilayah Indonesia"),
+    kabupaten: Optional[str] = Query(None, description="Filter nama kabupaten / kota di Indonesia"),
     limit: int = Query(1000, ge=1, le=5000, description="Maksimum jumlah titik hotspot yang diambil")
 ):
     """
     Endpoint penyedia data format GeoJSON FeatureCollection untuk dirender
     langsung oleh komponen peta Leaflet pada dashboard FRFP.
     """
-    rows = get_hotspots(risk_class=risk_class, province=province, limit=limit)
+    rows = get_hotspots(risk_class=risk_class, province=province, kabupaten=kabupaten, limit=limit)
     features = []
 
     for r in rows:
@@ -41,6 +42,7 @@ def get_hotspots_geojson(
                 "probability": r["probability"],
                 "risk_class": r["risk_class"],
                 "province_region": r.get("province_region", "Indonesia"),
+                "subregion": r.get("subregion") or r.get("province_region", "Indonesia"),
                 "acq_date": r.get("acq_date", ""),
                 "acq_time": r.get("acq_time", ""),
                 "daynight": r.get("daynight", "D"),

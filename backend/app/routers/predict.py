@@ -14,7 +14,7 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from ..schemas import HotspotInput, PredictionResponse, BatchPredictionResponse, SyncNRTResponse
 from ..services.model_service import model_service
-from ..services.geo import is_point_in_indonesia, format_satellite_timestamp, get_indonesia_region
+from ..services.geo import is_point_in_indonesia, format_satellite_timestamp, get_indonesia_region, get_indonesia_subregion
 from ..services.database import insert_hotspot, insert_batch_hotspots, clear_hotspots
 from ..config import NRT_DATASET_PATH
 
@@ -159,6 +159,7 @@ def predict_batch_csv(
                     lon_val = float(lons[i])
 
                     reg = get_indonesia_region(lat_val, lon_val)
+                    sub = get_indonesia_subregion(lat_val, lon_val, reg)
                     time_str = format_satellite_timestamp(
                         acq_date=str(acq_dates[i]),
                         acq_time=str(acq_times[i]),
@@ -180,6 +181,7 @@ def predict_batch_csv(
                         'risk_label': 1 if is_high else 0,
                         'is_indonesia': True,
                         'province_region': reg,
+                        'subregion': sub,
                         'acq_date': str(acq_dates[i]),
                         'acq_time': str(acq_times[i]),
                         'daynight': str(daynights[i]),
@@ -411,6 +413,7 @@ def load_sample_dataset(
         lon_val = float(lons[i])
 
         reg = get_indonesia_region(lat_val, lon_val)
+        sub = get_indonesia_subregion(lat_val, lon_val, reg)
         time_str = format_satellite_timestamp(
             acq_date=str(acq_dates[i]),
             acq_time=str(acq_times[i]),
@@ -432,6 +435,7 @@ def load_sample_dataset(
             'risk_label': 1 if is_high else 0,
             'is_indonesia': True,
             'province_region': reg,
+            'subregion': sub,
             'acq_date': str(acq_dates[i]),
             'acq_time': str(acq_times[i]),
             'daynight': str(daynights[i]),

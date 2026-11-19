@@ -34,6 +34,7 @@ def init_db():
         risk_label INTEGER NOT NULL,
         is_indonesia INTEGER NOT NULL,
         province_region TEXT,
+        subregion TEXT,
         acq_date TEXT,
         acq_time TEXT,
         daynight TEXT,
@@ -51,6 +52,7 @@ def init_db():
     needed_cols = {
         "is_indonesia": "INTEGER DEFAULT 1",
         "province_region": "TEXT",
+        "subregion": "TEXT",
         "acq_date": "TEXT",
         "acq_time": "TEXT",
         "daynight": "TEXT",
@@ -83,12 +85,12 @@ def insert_hotspot(record: Dict[str, Any]) -> int:
     cursor.execute("""
     INSERT INTO hotspots (
         latitude, longitude, brightness, scan, track, frp, bright_t31,
-        delta_t, probability, risk_class, risk_label, is_indonesia, province_region,
+        delta_t, probability, risk_class, risk_label, is_indonesia, province_region, subregion,
         acq_date, acq_time, daynight, local_time_str,
         audit_priority, audit_status, recommendation, created_at
     ) VALUES (
         :latitude, :longitude, :brightness, :scan, :track, :frp, :bright_t31,
-        :delta_t, :probability, :risk_class, :risk_label, :is_indonesia, :province_region,
+        :delta_t, :probability, :risk_class, :risk_label, :is_indonesia, :province_region, :subregion,
         :acq_date, :acq_time, :daynight, :local_time_str,
         :audit_priority, :audit_status, :recommendation, :created_at
     );
@@ -96,6 +98,7 @@ def insert_hotspot(record: Dict[str, Any]) -> int:
         **record,
         "is_indonesia": 1 if record.get("is_indonesia", True) else 0,
         "province_region": record.get("province_region", "Indonesia"),
+        "subregion": record.get("subregion") or record.get("province_region", "Indonesia"),
         "acq_date": record.get("acq_date", datetime.date.today().isoformat()),
         "acq_time": record.get("acq_time", "0000"),
         "daynight": record.get("daynight", "D"),
@@ -133,6 +136,7 @@ def insert_batch_hotspots(records: List[Dict[str, Any]]) -> int:
             int(r['risk_label']),
             1 if r.get('is_indonesia', True) else 0,
             str(r.get('province_region', 'Indonesia')),
+            str(r.get('subregion') or r.get('province_region', 'Indonesia')),
             str(r.get('acq_date') or datetime.date.today().isoformat()),
             str(r.get('acq_time') or '0000'),
             str(r.get('daynight') or 'D'),
@@ -146,10 +150,10 @@ def insert_batch_hotspots(records: List[Dict[str, Any]]) -> int:
     cursor.executemany("""
     INSERT INTO hotspots (
         latitude, longitude, brightness, scan, track, frp, bright_t31,
-        delta_t, probability, risk_class, risk_label, is_indonesia, province_region,
+        delta_t, probability, risk_class, risk_label, is_indonesia, province_region, subregion,
         acq_date, acq_time, daynight, local_time_str,
         audit_priority, audit_status, recommendation, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """, tuple_rows)
 
     conn.commit()
@@ -159,6 +163,7 @@ def insert_batch_hotspots(records: List[Dict[str, Any]]) -> int:
 def get_hotspots(
     risk_class: Optional[str] = None,
     province: Optional[str] = None,
+    kabupaten: Optional[str] = None,
     limit: int = 1000
 ) -> List[Dict[str, Any]]:
     conn = get_db_connection()
@@ -172,8 +177,14 @@ def get_hotspots(
         params.append(risk_class)
 
     if province and province != "ALL":
-        query += " AND province_region LIKE ?"
+        query += " AND (province_region LIKE ? OR subregion LIKE ?)"
         params.append(f"%{province}%")
+        params.append(f"%{province}%")
+
+    if kabupaten and kabupaten != "ALL":
+        query += " AND (subregion LIKE ? OR province_region LIKE ?)"
+        params.append(f"%{kabupaten}%")
+        params.append(f"%{kabupaten}%")
 
     query += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
