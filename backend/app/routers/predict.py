@@ -334,3 +334,124 @@ def sync_near_realtime_hotspots(
             source="FRFP Near-Realtime Feed",
             timestamp=now_str
         )
+
+@router.post("/load-sample", response_model=BatchPredictionResponse)
+def load_sample_dataset(
+    region: str = Query("kalimantan", description="Pilihan region: kalimantan, sulawesi, papua, nasional, riau"),
+    replace_existing: bool = Query(True, description="Gantikan data lama di database")
+):
+    """
+    Endpoint pemuatan instan dataset sampel ringan (<200KB) untuk pengujian cepat:
+    - kalimantan (1.500 baris)
+    - sulawesi (1.200 baris)
+    - papua (1.500 baris)
+    - nasional (2.500 baris)
+    - riau (4.843 baris)
+    """
+    # Root directory proyek FRFP
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    sample_files = {
+        "kalimantan": os.path.join(root_dir, "data", "kalimantan_sample_test.csv"),
+        "sulawesi": os.path.join(root_dir, "data", "sulawesi_sample_test.csv"),
+        "papua": os.path.join(root_dir, "data", "papua_sample_test.csv"),
+        "nasional": os.path.join(root_dir, "data", "indonesia_nasional_sample_test.csv"),
+        "riau": os.path.join(root_dir, "data", "riau_nrt_test.csv"),
+    }
+
+    target_file = sample_files.get(region.lower().strip())
+    if not target_file or not os.path.exists(target_file):
+        raise HTTPException(
+            status_code=404,
+            detail=f"File sampel untuk region '{region}' tidak ditemukan. Opsi tersedia: {list(sample_files.keys())}"
+        )
+
+    if replace_existing:
+        clear_hotspots()
+
+    df = pd.read_csv(target_file)
+    required_cols = ['latitude', 'longitude', 'brightness', 'scan', 'track', 'frp', 'bright_t31']
+
+    total_uploaded = len(df)
+    indo_mask = (
+        (df['latitude'] >= -11.0) & (df['latitude'] <= 6.0) &
+        (df['longitude'] >= 95.0) & (df['longitude'] <= 141.0)
+    )
+    indo_df = df[indo_mask]
+    total_indo = len(indo_df)
+    total_out = total_uploaded - total_indo
+
+    X = indo_df[required_cols].values
+    X_scaled = model_service.scaler.transform(X)
+    probs = model_service.model.predict_proba(X_scaled)[:, 1]
+    delta_t_vals = indo_df['brightness'].values - indo_df['bright_t31'].values
+
+    high_risk_count = int((probs >= 0.5).sum())
+    low_risk_count = total_indo - high_risk_count
+
+    now_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    to_insert_records = []
+    preview_records = []
+
+    lats = indo_df['latitude'].values
+    lons = indo_df['longitude'].values
+    brights = indo_df['brightness'].values
+    scans = indo_df['scan'].values
+    tracks = indo_df['track'].values
+    frps = indo_df['frp'].values
+    t31s = indo_df['bright_t31'].values
+    acq_dates = indo_df['acq_date'].astype(str).values if 'acq_date' in indo_df.columns else [datetime.date.today().isoformat()] * total_indo
+    acq_times = indo_df['acq_time'].astype(str).values if 'acq_time' in indo_df.columns else ['0000'] * total_indo
+    daynights = indo_df['daynight'].astype(str).values if 'daynight' in indo_df.columns else ['D'] * total_indo
+
+    for i in range(total_indo):
+        prob_val = float(probs[i])
+        is_high = prob_val >= 0.5
+        risk_str = "HIGH RISK" if is_high else "LOW RISK"
+        lat_val = float(lats[i])
+        lon_val = float(lons[i])
+
+        reg = get_indonesia_region(lat_val, lon_val)
+        time_str = format_satellite_timestamp(
+            acq_date=str(acq_dates[i]),
+            acq_time=str(acq_times[i]),
+            longitude=lon_val,
+            daynight=str(daynights[i])
+        )
+
+        rec = {
+            'latitude': lat_val,
+            'longitude': lon_val,
+            'brightness': round(float(brights[i]), 2),
+            'scan': round(float(scans[i]), 2),
+            'track': round(float(tracks[i]), 2),
+            'frp': round(float(frps[i]), 2),
+            'bright_t31': round(float(t31s[i]), 2),
+            'delta_t': round(float(delta_t_vals[i]), 2),
+            'probability': round(prob_val, 4),
+            'risk_class': risk_str,
+            'risk_label': 1 if is_high else 0,
+            'is_indonesia': True,
+            'province_region': reg,
+            'acq_date': str(acq_dates[i]),
+            'acq_time': str(acq_times[i]),
+            'daynight': str(daynights[i]),
+            'local_time_str': time_str,
+            'audit_priority': "Sangat Tinggi (P1)" if is_high else "Rendah (P3)",
+            'audit_status': "PENDING" if is_high else "VERIFIED",
+            'recommendation': "Prioritas Audit Khusus Gakkum & Dispatch Segera Regu Pemadam." if is_high else "Pemantauan satelit berkala.",
+            'created_at': now_ts
+        }
+        to_insert_records.append(rec)
+        if len(preview_records) < 100:
+            preview_records.append(rec)
+
+    insert_batch_hotspots(to_insert_records)
+
+    return BatchPredictionResponse(
+        total_uploaded=total_uploaded,
+        total_processed_indonesia=total_indo,
+        total_out_of_bounds=total_out,
+        high_risk_count=high_risk_count,
+        low_risk_count=low_risk_count,
+        records=preview_records
+    )

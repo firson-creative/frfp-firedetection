@@ -16,6 +16,7 @@ import {
   Compass,
   Cpu,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -103,6 +104,28 @@ export default function IngestPage() {
     }
   };
 
+  const handleLoadSample = async (region: string) => {
+    setUploading(true);
+    setError(null);
+    setResponse(null);
+    setResetMessage(null);
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/v1/load-sample?region=${region}&replace_existing=${replaceExisting}`,
+        {},
+        { timeout: 30000 }
+      );
+      setResponse(res.data);
+      setResetMessage(`Dataset sampel ${region.toUpperCase()} (${res.data.total_processed_indonesia.toLocaleString()} titik) berhasil diklasifikasi dan dimuat.`);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.message || "Gagal memuat dataset sampel.";
+      setError(`Gagal memuat sampel: ${detail}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -134,6 +157,88 @@ export default function IngestPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
           {isResetting ? "Mengosongkan..." : "Kosongkan Basis Data (Reset to 0)"}
         </button>
+      </div>
+
+      {/* 1-Click Quick Test Datasets (<200 KB) */}
+      <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
+              Dataset Uji Cepat Siap Pakai (Ukuran Ringan &lt; 200 KB)
+            </h2>
+          </div>
+          <span className="text-[11px] text-gray-400 font-mono">Proses &lt; 0.2 detik</span>
+        </div>
+        <p className="text-xs text-emerald-100/70">
+          Uji instan kemampuan klasifikasi model ANN-MLP pada wilayah lain di luar Sumatera tanpa perlu repot mengunggah file manual:
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+          {/* Kalimantan */}
+          <button
+            type="button"
+            onClick={() => handleLoadSample("kalimantan")}
+            disabled={uploading || isResetting}
+            className="p-3 rounded-xl bg-black/40 hover:bg-emerald-950/60 border border-emerald-500/20 hover:border-emerald-400/50 transition text-left group disabled:opacity-50"
+          >
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+              <span>🌲</span> Kalimantan (1.500 Titik)
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1">127 KB • Kalbar, Kalteng, Kalsel, Kaltim</div>
+            <div className="text-[10px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+              Muat Sekarang &rarr;
+            </div>
+          </button>
+
+          {/* Sulawesi */}
+          <button
+            type="button"
+            onClick={() => handleLoadSample("sulawesi")}
+            disabled={uploading || isResetting}
+            className="p-3 rounded-xl bg-black/40 hover:bg-emerald-950/60 border border-emerald-500/20 hover:border-emerald-400/50 transition text-left group disabled:opacity-50"
+          >
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+              <span>🌊</span> Sulawesi (1.200 Titik)
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1">101 KB • Sulsel, Sulteng, Sultra, Sulut</div>
+            <div className="text-[10px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+              Muat Sekarang &rarr;
+            </div>
+          </button>
+
+          {/* Papua */}
+          <button
+            type="button"
+            onClick={() => handleLoadSample("papua")}
+            disabled={uploading || isResetting}
+            className="p-3 rounded-xl bg-black/40 hover:bg-emerald-950/60 border border-emerald-500/20 hover:border-emerald-400/50 transition text-left group disabled:opacity-50"
+          >
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+              <span>🌄</span> Papua (1.500 Titik)
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1">127 KB • Merauke, Jayapura, Papua Barat</div>
+            <div className="text-[10px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+              Muat Sekarang &rarr;
+            </div>
+          </button>
+
+          {/* Nusantara Campuran */}
+          <button
+            type="button"
+            onClick={() => handleLoadSample("nasional")}
+            disabled={uploading || isResetting}
+            className="p-3 rounded-xl bg-black/40 hover:bg-emerald-950/60 border border-emerald-500/20 hover:border-emerald-400/50 transition text-left group disabled:opacity-50"
+          >
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 flex items-center gap-1.5">
+              <span>🇮🇩</span> Nusantara (2.500 Titik)
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1">211 KB • Campuran Sabang - Merauke</div>
+            <div className="text-[10px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+              Muat Sekarang &rarr;
+            </div>
+          </button>
+        </div>
       </div>
 
       {resetMessage && (
