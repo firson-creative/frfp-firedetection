@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import {
   Zap,
   AlertTriangle,
@@ -146,12 +147,12 @@ export default function PredictPage() {
     setResult(null);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/predict", formData);
+      const res = await axios.post(`${API_BASE_URL}/api/v1/predict`, formData, { timeout: 15000 });
       setResult(res.data);
     } catch (err: any) {
       setError(
         err?.response?.data?.detail ||
-          "Gagal menghubungi server backend di http://localhost:8000. Pastikan backend aktif dengan perintah: cd backend; python run.py"
+          "Gagal menghubungi server backend di http://127.0.0.1:8000. Pastikan backend aktif dengan perintah: cd backend; python run.py"
       );
     } finally {
       setLoading(false);

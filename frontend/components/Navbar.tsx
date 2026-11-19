@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -25,7 +26,7 @@ export default function Navbar() {
   useEffect(() => {
     const checkServer = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/health", { timeout: 3000 });
+        const res = await axios.get(`${API_BASE_URL}/health`, { timeout: 3000 });
         setServerOnline(res.status === 200);
       } catch (e) {
         setServerOnline(false);
@@ -40,7 +41,7 @@ export default function Navbar() {
     if (isSyncing) return;
     setIsSyncing(true);
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/sync-nrt");
+      const res = await axios.post(`${API_BASE_URL}/api/v1/sync-nrt`);
       setSyncToast({
         count: res.data.added_count,
         high: res.data.high_risk_count,

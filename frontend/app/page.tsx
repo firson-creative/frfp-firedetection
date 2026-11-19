@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import {
   Flame,
   AlertTriangle,
@@ -182,8 +183,8 @@ export default function DashboardPage() {
     setBackendError(false);
     try {
       const [statsRes, geoRes] = await Promise.all([
-        axios.get("http://localhost:8000/api/v1/stats", { timeout: 4000 }),
-        axios.get("http://localhost:8000/api/v1/hotspots?limit=1500", { timeout: 4000 }),
+        axios.get(`${API_BASE_URL}/api/v1/stats`, { timeout: 10000 }),
+        axios.get(`${API_BASE_URL}/api/v1/hotspots?limit=1500`, { timeout: 10000 }),
       ]);
       setStats(statsRes.data);
       setHotspots(geoRes.data.features || []);
@@ -211,7 +212,7 @@ export default function DashboardPage() {
     setIsSyncing(true);
     setSyncFeedback(null);
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/sync-nrt");
+      const res = await axios.post(`${API_BASE_URL}/api/v1/sync-nrt`);
       setSyncFeedback(
         `Sukses: Ditambahkan ${res.data.added_count} titik baru (${res.data.high_risk_count} High Risk) via ${res.data.source}.`
       );

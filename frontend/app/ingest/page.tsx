@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -55,7 +56,7 @@ export default function IngestPage() {
     setResetMessage(null);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/reset-db", {}, { timeout: 15000 });
+      const res = await axios.post(`${API_BASE_URL}/api/v1/reset-db`, {}, { timeout: 15000 });
       setResetMessage(res.data?.message || "Basis data berhasil di-reset menjadi kosong (0 titik).");
       setResponse(null);
     } catch (err: any) {
@@ -83,7 +84,7 @@ export default function IngestPage() {
 
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/predict-batch?replace_existing=${replaceExisting}`,
+        `${API_BASE_URL}/api/v1/predict-batch?replace_existing=${replaceExisting}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

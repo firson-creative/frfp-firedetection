@@ -34,5 +34,6 @@ NRT_DATASET_PATH = os.path.join(os.path.dirname(BASE_DIR), "data", "fire_nrt_SV-
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
 ]

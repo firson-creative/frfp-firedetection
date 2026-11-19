@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import {
   FileText,
   Printer,
@@ -25,8 +26,8 @@ export default function PriorityListPage() {
     const fetchHighRisk = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:8000/api/v1/hotspots?risk_class=HIGH+RISK&limit=300",
-          { timeout: 4000 }
+          `${API_BASE_URL}/api/v1/hotspots?risk_class=HIGH+RISK&limit=300`,
+          { timeout: 10000 }
         );
         setHotspots(res.data.features || []);
       } catch (err) {
