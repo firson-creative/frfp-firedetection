@@ -1,6 +1,6 @@
 """
 backend/app/routers/hotspots.py
-Router GeoJSON Hotspots untuk Integrasi Peta React-Leaflet & Statistik
+Router GeoJSON Hotspots FRFP Skala Nasional & Statistik
 """
 
 from typing import Optional
@@ -13,13 +13,14 @@ router = APIRouter(prefix="/api/v1", tags=["Hotspots & GIS"])
 @router.get("/hotspots", response_model=GeoJSONFeatureCollection)
 def get_hotspots_geojson(
     risk_class: Optional[str] = Query(None, description="Filter kelas risiko: 'HIGH RISK' atau 'LOW RISK'"),
-    limit: int = Query(500, ge=1, le=2000, description="Maksimum jumlah titik hotspot yang diambil")
+    province: Optional[str] = Query(None, description="Filter nama provinsi / wilayah Indonesia"),
+    limit: int = Query(1000, ge=1, le=5000, description="Maksimum jumlah titik hotspot yang diambil")
 ):
     """
     Endpoint penyedia data format GeoJSON FeatureCollection untuk dirender
-    langsung oleh komponen peta React-Leaflet pada dashboard frontend.
+    langsung oleh komponen peta Leaflet pada dashboard FRFP.
     """
-    rows = get_hotspots(risk_class=risk_class, limit=limit)
+    rows = get_hotspots(risk_class=risk_class, province=province, limit=limit)
     features = []
 
     for r in rows:
@@ -27,7 +28,7 @@ def get_hotspots_geojson(
             type="Feature",
             geometry=GeoJSONGeometry(
                 type="Point",
-                coordinates=[r["longitude"], r["latitude"]]  # GeoJSON format: [lon, lat]
+                coordinates=[r["longitude"], r["latitude"]]  # GeoJSON: [lon, lat]
             ),
             properties={
                 "id": r["id"],
@@ -39,7 +40,11 @@ def get_hotspots_geojson(
                 "delta_t": r["delta_t"],
                 "probability": r["probability"],
                 "risk_class": r["risk_class"],
-                "subregion": r.get("subregion", "Riau"),
+                "province_region": r.get("province_region", "Indonesia"),
+                "acq_date": r.get("acq_date", ""),
+                "acq_time": r.get("acq_time", ""),
+                "daynight": r.get("daynight", "D"),
+                "local_time_str": r.get("local_time_str", "WIB"),
                 "audit_priority": r.get("audit_priority", "Sedang"),
                 "audit_status": r.get("audit_status", "PENDING"),
                 "recommendation": r.get("recommendation", ""),
@@ -53,6 +58,6 @@ def get_hotspots_geojson(
 @router.get("/stats")
 def get_system_stats():
     """
-    Endpoint statistik ringkasan total hotspot dan prioritas audit di Riau.
+    Endpoint statistik ringkasan total hotspot dan prioritas audit di seluruh Indonesia.
     """
     return get_statistics()

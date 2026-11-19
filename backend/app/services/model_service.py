@@ -1,13 +1,14 @@
 """
 backend/app/services/model_service.py
-Layanan Inferensi Model ANN-MLP Karhutla Riau (Mendukung .pkl & .keras)
+Layanan Inferensi Model ANN-MLP FRFP Skala Nasional & Pengayaan Waktu Satelit
 """
 
 import os
 import math
+import datetime
 from typing import Dict, Any, List
 from ..config import MODEL_KERAS_PATH, MODEL_PKL_PATH, SCALER_PATH
-from .geo import is_point_in_riau, get_riau_subregion
+from .geo import is_point_in_indonesia, get_indonesia_region, format_satellite_timestamp
 
 class HotspotRiskModelService:
     def __init__(self):
@@ -18,7 +19,7 @@ class HotspotRiskModelService:
         self.load_model()
 
     def load_model(self):
-        """Memuat artefak model (pkl atau keras) dan Scaler jika tersedia di disk."""
+        """Memuat artefak model (.pkl atau .keras) dan Scaler jika tersedia di disk."""
         import joblib
 
         # Prioritas 1: Scikit-Learn MLP PKL
@@ -28,7 +29,7 @@ class HotspotRiskModelService:
                 self.model = joblib.load(MODEL_PKL_PATH)
                 self.model_type = "SKLEARN_MLP"
                 self.is_loaded = True
-                print(f"[OK] Model ANN-MLP Riau (.pkl) berhasil dimuat dari: {MODEL_PKL_PATH}")
+                print(f"[OK] FRFP Model ANN-MLP (.pkl) berhasil dimuat dari: {MODEL_PKL_PATH}")
                 return
             except Exception as e:
                 print(f"[WARN] Gagal memuat model .pkl: {e}")
@@ -41,31 +42,35 @@ class HotspotRiskModelService:
                 self.model = keras.models.load_model(MODEL_KERAS_PATH)
                 self.model_type = "KERAS"
                 self.is_loaded = True
-                print(f"[OK] Model ANN-MLP Riau (.keras) berhasil dimuat dari: {MODEL_KERAS_PATH}")
+                print(f"[OK] FRFP Model ANN-MLP (.keras) berhasil dimuat dari: {MODEL_KERAS_PATH}")
                 return
             except Exception as e:
                 print(f"[WARN] Gagal memuat model .keras: {e}")
 
-        print("[INFO] Model artefak biner belum ditemukan. Mengaktifkan mesin estimasi rumus PRD.")
+        print("[INFO] Model biner belum ditemukan. Mengaktifkan mesin estimasi rumus standar PRD.")
         self.model_type = "RULE_BASED"
         self.is_loaded = False
 
-    def predict_single(self, features: Dict[str, float]) -> Dict[str, Any]:
+    def predict_single(self, features: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Melakukan inferensi untuk 1 titik panas.
-        Input features: latitude, longitude, brightness, scan, track, frp, bright_t31
+        Melakukan inferensi risiko untuk 1 titik panas satelit VIIRS skala nasional Indonesia.
         """
-        lat = features['latitude']
-        lon = features['longitude']
-        brightness = features['brightness']
-        scan = features['scan']
-        track = features['track']
-        frp = features['frp']
-        bright_t31 = features['bright_t31']
+        lat = float(features['latitude'])
+        lon = float(features['longitude'])
+        brightness = float(features['brightness'])
+        scan = float(features['scan'])
+        track = float(features['track'])
+        frp = float(features['frp'])
+        bright_t31 = float(features['bright_t31'])
 
-        in_riau = is_point_in_riau(lat, lon)
-        subregion = get_riau_subregion(lat, lon)
+        acq_date = features.get('acq_date') or datetime.date.today().isoformat()
+        acq_time = str(features.get('acq_time') or "0600").strip().zfill(4)
+        daynight = features.get('daynight') or "D"
+
+        in_indonesia = is_point_in_indonesia(lat, lon)
+        province_region = get_indonesia_region(lat, lon)
         delta_t = round(brightness - bright_t31, 2)
+        local_time_str = format_satellite_timestamp(acq_date, acq_time, lon, daynight)
 
         if self.is_loaded and self.model is not None and self.scaler is not None:
             import numpy as np
@@ -73,7 +78,6 @@ class HotspotRiskModelService:
             scaled_input = self.scaler.transform(raw_input)
 
             if self.model_type == "SKLEARN_MLP":
-                # Scikit-Learn MLPClassifier output probability for class 1
                 prob = float(self.model.predict_proba(scaled_input)[0, 1])
             else:
                 prob = float(self.model.predict(scaled_input, verbose=0)[0][0])
@@ -88,20 +92,20 @@ class HotspotRiskModelService:
         risk_class = "HIGH RISK" if prob >= 0.50 else "LOW RISK"
         risk_label = 1 if prob >= 0.50 else 0
 
-        # Rekomendasi Aksi & Prioritas Audit (PRD Bab 1.2 & 5)
-        if not in_riau:
-            audit_priority = "Peringatan (Luar Riau)"
-            recommendation = "Titik koordinat berada di luar wilayah percontohan Provinsi Riau."
+        # Rekomendasi Lapangan Nasional
+        if not in_indonesia:
+            audit_priority = "Peringatan (Luar Negeri)"
+            recommendation = "Titik koordinat berada di luar kedaulatan teritori Republik Indonesia."
         elif risk_class == "HIGH RISK":
-            if prob >= 0.80 or frp >= 35.0:
+            if prob >= 0.85 or frp >= 35.0:
                 audit_priority = "Sangat Tinggi (P1)"
-                recommendation = "Prioritas Audit Khusus Gakkum & Dispatch Segera Regu Pemadam Manggala Agni."
+                recommendation = f"Dispatch darurat Regu Manggala Agni Daops {province_region} & Audit Investigasi Balai Gakkum KLHK."
             else:
                 audit_priority = "Tinggi (P2)"
-                recommendation = "Verifikasi patroli darat/udara dan jadwal audit kepatuhan konsesi terdekat."
+                recommendation = f"Verifikasi ground check terpadu di {province_region} dan pemeriksaan izin konsesi terdekat."
         else:
             audit_priority = "Rendah (P3)"
-            recommendation = "Pemantauan satelit berkala, tidak mendesak untuk intervensi fisik saat ini."
+            recommendation = "Pemantauan satelit berkala via FRFP, tidak mendesak untuk intervensi fisik darat saat ini."
 
         return {
             "latitude": lat,
@@ -115,8 +119,12 @@ class HotspotRiskModelService:
             "probability": prob,
             "risk_class": risk_class,
             "risk_label": risk_label,
-            "is_riau": in_riau,
-            "subregion": subregion,
+            "is_indonesia": in_indonesia,
+            "province_region": province_region,
+            "acq_date": acq_date,
+            "acq_time": acq_time,
+            "daynight": daynight,
+            "local_time_str": local_time_str,
             "audit_priority": audit_priority,
             "recommendation": recommendation
         }

@@ -1,23 +1,23 @@
 """
 backend/app/config.py
-Konfigurasi Wilayah Target Riau & Parameter Sistem
+Konfigurasi Nasional FRFP - Fire Risk Foresight & Prioritization
 """
 
 import os
 
-# Koordinat Bounding Box Resmi Provinsi Riau (PRD 1.1)
-RIAU_BOUNDING_BOX = {
-    "lat_min": -1.15,
-    "lat_max": 2.45,
-    "lon_min": 100.00,
-    "lon_max": 103.85
+# Koordinat Bounding Box Resmi Indonesia (Sabang s.d. Merauke)
+INDONESIA_BOUNDING_BOX = {
+    "lat_min": -11.00,
+    "lat_max": 6.00,
+    "lon_min": 95.00,
+    "lon_max": 141.00
 }
 
-# Koordinat Center Default (Pekanbaru, Riau) untuk Peta Leaflet
-RIAU_DEFAULT_CENTER = {
-    "latitude": 0.5071,
-    "longitude": 101.4478,
-    "zoom": 8
+# Koordinat Center Default (Pusat Kepulauan Indonesia) untuk Peta Leaflet
+INDONESIA_DEFAULT_CENTER = {
+    "latitude": -0.7893,
+    "longitude": 113.9213,
+    "zoom": 5
 }
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +26,10 @@ MODEL_KERAS_PATH = os.path.join(MODEL_DIR, "ann_model_riau.keras")
 MODEL_PKL_PATH = os.path.join(MODEL_DIR, "ann_model_riau.pkl")
 SCALER_PATH = os.path.join(MODEL_DIR, "scaler_riau.pkl")
 
-DATABASE_PATH = os.path.join(BASE_DIR, "hotspots_riau.db")
+DATABASE_PATH = os.path.join(BASE_DIR, "frfp_hotspots.db")
+
+# Path ke file NRT lokal untuk simulator Near-Realtime
+NRT_DATASET_PATH = os.path.join(os.path.dirname(BASE_DIR), "data", "fire_nrt_SV-C2_829694.csv")
 
 CORS_ORIGINS = [
     "http://localhost:3000",

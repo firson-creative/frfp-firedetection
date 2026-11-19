@@ -1,6 +1,6 @@
 """
 backend/app/schemas.py
-Skema Validasi Pydantic v2 untuk Titik Panas Karhutla Riau
+Skema Validasi Pydantic v2 untuk FRFP - Fire Risk Foresight & Prioritization
 """
 
 from typing import List, Optional, Dict, Any
@@ -8,53 +8,56 @@ from pydantic import BaseModel, Field
 
 class HotspotInput(BaseModel):
     """
-    7 Fitur Masukan Sesuai PRD Bab 4.1
+    7 Fitur Masukan Sesuai PRD + Metadata Tanggal & Waktu Akuisisi Satelit
     """
     latitude: float = Field(
         ...,
-        description="Koordinat lintang (Rentang Riau: -1.15 s.d. 2.45)",
-        examples=[0.5071]
+        description="Koordinat lintang (Rentang Indonesia: -11.00 s.d. 6.00)",
+        examples=[-0.7893]
     )
     longitude: float = Field(
         ...,
-        description="Koordinat bujur (Rentang Riau: 100.00 s.d. 103.85)",
-        examples=[101.4478]
+        description="Koordinat bujur (Rentang Indonesia: 95.00 s.d. 141.00)",
+        examples=[113.9213]
     )
     brightness: float = Field(
         ...,
         ge=250.0,
         le=550.0,
         description="Suhu kecerahan kanal I-4 dalam Kelvin (Rentang: 300.0 - 505.0 K)",
-        examples=[338.5]
+        examples=[345.2]
     )
     scan: float = Field(
         ...,
         ge=0.1,
         le=2.0,
-        description="Resolusi pemindaian satelit dalam km (Rentang: 0.32 - 0.80 km)",
+        description="Resolusi pemindaian satelit dalam km (0.32 - 0.80 km)",
         examples=[0.45]
     )
     track: float = Field(
         ...,
         ge=0.1,
         le=2.0,
-        description="Resolusi lintasan satelit dalam km (Rentang: 0.36 - 0.80 km)",
+        description="Resolusi lintasan satelit dalam km (0.36 - 0.80 km)",
         examples=[0.40]
     )
     frp: float = Field(
         ...,
         ge=0.0,
-        le=2000.0,
+        le=3000.0,
         description="Fire Radiative Power dalam Megawatt (FRP)",
-        examples=[24.6]
+        examples=[32.4]
     )
     bright_t31: float = Field(
         ...,
         ge=250.0,
         le=400.0,
-        description="Suhu kanal I-5 pembanding latar dalam Kelvin (Rentang: 275.0 - 345.0 K)",
-        examples=[296.2]
+        description="Suhu kanal I-5 pembanding latar dalam Kelvin (275.0 - 345.0 K)",
+        examples=[294.5]
     )
+    acq_date: Optional[str] = Field(None, description="Tanggal perekaman (YYYY-MM-DD)", examples=["2026-11-20"])
+    acq_time: Optional[str] = Field(None, description="Waktu perekaman UTC (HHMM)", examples=["0630"])
+    daynight: Optional[str] = Field("D", description="Lintasan Siang (D) atau Malam (N)", examples=["D"])
 
 class PredictionResponse(BaseModel):
     id: Optional[int] = None
@@ -69,18 +72,32 @@ class PredictionResponse(BaseModel):
     probability: float
     risk_class: str  # "HIGH RISK" | "LOW RISK"
     risk_label: int  # 1 | 0
-    is_riau: bool
+    is_indonesia: bool
+    province_region: str
+    acq_date: str
+    acq_time: str
+    daynight: str
+    local_time_str: str
     audit_priority: str
     recommendation: str
     created_at: Optional[str] = None
 
 class BatchPredictionResponse(BaseModel):
     total_uploaded: int
-    total_processed_riau: int
+    total_processed_indonesia: int
     total_out_of_bounds: int
     high_risk_count: int
     low_risk_count: int
     records: List[PredictionResponse]
+
+class SyncNRTResponse(BaseModel):
+    status: str
+    message: str
+    added_count: int
+    high_risk_count: int
+    low_risk_count: int
+    source: str
+    timestamp: str
 
 class GeoJSONGeometry(BaseModel):
     type: str = "Point"

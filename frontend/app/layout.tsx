@@ -3,9 +3,9 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Sistem Klasifikasi Titik Panas Karhutla Riau (ANN-MLP)",
+  title: "FRFP — Fire Risk Foresight & Prioritization (ANN-MLP)",
   description:
-    "Prototipe Sistem Klasifikasi Tingkat Risiko Titik Panas Karhutla Berbasis Jaringan Syaraf Tiruan (ANN-MLP) untuk Prioritas Audit Kepatuhan Lingkungan Provinsi Riau.",
+    "Sistem Cerdas Klasifikasi & Prioritas Risiko Kebakaran Hutan dan Lahan Skala Nasional Berbasis Artificial Neural Network (ANN-MLP) dan Data Satelit NASA FIRMS VIIRS 375m.",
 };
 
 export default function RootLayout({
@@ -15,14 +15,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className="bg-brand-darkBg min-h-screen text-gray-100 flex flex-col">
+      <body className="min-h-screen text-gray-100 flex flex-col bg-[#030d0b]">
         <Navbar />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
         </main>
-        <footer className="bg-brand-navy border-t border-brand-deepBlue/40 py-4 text-center text-xs text-gray-400">
-          <p>© 2026 Prototipe Sistem Klasifikasi Risiko Karhutla Riau — Berbasis ANN-MLP (TensorFlow + FastAPI + Next.js)</p>
-          <p className="mt-1 text-gray-500">Mata Kuliah Kecerdasan Buatan (AI) — Bounding Box: Provinsi Riau</p>
+        <footer className="liquid-glass border-t border-emerald-500/20 py-5 text-center text-xs text-emerald-200/60 mt-12">
+          <div className="max-w-7xl mx-auto px-4 space-y-1">
+            <p className="font-semibold text-emerald-300">
+              © 2026 FRFP — Fire Risk Foresight & Prioritization | Skala Nasional (Sabang s.d. Merauke)
+            </p>
+            <p className="text-[11px] text-gray-400">
+              Inovasi Model ANN-MLP (TensorFlow / Scikit-Learn + FastAPI + Next.js) • Deteksi Realtime Satelit NASA FIRMS VIIRS 375m
+            </p>
+          </div>
         </footer>
       </body>
     </html>
