@@ -67,11 +67,12 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # Membangun Model Jaringan Syaraf Tiruan (ANN-MLP: 7 -> 64 -> 32 -> 1)
-    # Sesuai PRD Bab 5: ReLU hidden activations, Adam optimizer (lr=0.001)
-    print("\n[*] Menginisialisasi arsitektur JST (ANN-MLP): 7 -> 64 -> 32 -> 1...")
+    # Membangun Model Jaringan Syaraf Tiruan Sederhana (ANN-MLP: 7 -> 16 -> 1)
+    # Sesuai kurikulum pengenalan JST tingkat sarjana (Semester 3):
+    # 3-Layer Feedforward (Input: 7, Single Hidden Layer: 16 ReLU, Output: 1 Sigmoid)
+    print("\n[*] Menginisialisasi arsitektur JST Sederhana (ANN-MLP): 7 -> 16 -> 1...")
     mlp = MLPClassifier(
-        hidden_layer_sizes=(64, 32),
+        hidden_layer_sizes=(16,),
         activation='relu',
         solver='adam',
         learning_rate_init=0.001,

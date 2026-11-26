@@ -67,8 +67,8 @@ Sesuai keputusan arsitektur (Stack Opsi B), prototipe memisahkan antarmuka pengg
                             ▼
 ┌────────────────────────────────────────────────────────┐
 │             AI ENGINE LAYER (Person 1)                 │
-│  TensorFlow / Keras ANN-MLP (7 → 64 → 32 → 1)          │
-│  Artifacts: ann_model_riau.keras & minmax_scaler.pkl   │
+│  TensorFlow / Keras ANN-MLP (7 → 16 → 1)               │
+│  Artifacts: ann_model_riau.pkl & scaler_riau.pkl       │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -84,9 +84,9 @@ Sesuai keputusan arsitektur (Stack Opsi B), prototipe memisahkan antarmuka pengg
   2. Menerapkan formula **Ground Truth resmi**:
      $$\text{Label} = 1 \ (\text{High Risk}) \iff (\text{FRP} \ge 15.0\text{ MW}) \lor (\text{Brightness} - \text{Bright\_T31} \ge 25.0\text{ K})$$
      $$\text{Label} = 0 \ (\text{Low Risk}) \iff \text{Kondisi lainnya}$$
-  3. Membangun dan melatih model ANN-MLP ($7 \rightarrow 64 \rightarrow 32 \rightarrow 1$) dengan normalisasi `MinMaxScaler`.
+  3. Membangun dan melatih model ANN-MLP ($7 \rightarrow 16 \rightarrow 1$) dengan normalisasi `MinMaxScaler`.
   4. Mengevaluasi metrik ilmiah (Akurasi $\ge 85\%$, F1-Score $\ge 0,80$, Confusion Matrix).
-  5. Mengekspor artefak model `ann_model_riau.keras` dan `scaler_riau.pkl` beserta notebook dokumentasi pelatihan.
+  5. Mengekspor artefak model `ann_model_riau.pkl` dan `scaler_riau.pkl` beserta notebook dokumentasi pelatihan.
 
 #### Person 2: Backend & System Lead (API & Database Engineer)
 * **Tanggung Jawab:**
@@ -150,8 +150,7 @@ $$\text{Class} = 0 \ (\text{LOW RISK}) \iff \text{Kondisi lainnya}$$
 ## 5. SPESIFIKASI ARSITEKTUR MODEL JST (ANN-MLP)
 
 * **Input Layer:** 7 Neuron (setelah normalisasi `MinMaxScaler`).
-* **Hidden Layer 1:** 64 Neuron, Aktivasi **ReLU**, Dropout $0.2$.
-* **Hidden Layer 2:** 32 Neuron, Aktivasi **ReLU**, Dropout $0.1$.
+* **Single Hidden Layer:** 16 Neuron, Aktivasi **ReLU** (Arsitektur sederhana feedforward standar untuk pengenalan JST Semester 3).
 * **Output Layer:** 1 Neuron, Aktivasi **Sigmoid** ($\hat{y} \in [0.00, 1.00]$).
 * **Optimizer:** Adam ($lr = 0.001$).
 * **Fungsi Rugi:** Binary Cross-Entropy.

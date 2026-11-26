@@ -6,9 +6,11 @@ Sistem full-stack terintegrasi untuk mengklasifikasikan titik panas satelit NASA
 ---
 
 ## 🌟 Fitur Utama FRFP v2.0
-1. **Model JST Berkualitas Tinggi (ANN-MLP):**
+1. **Model JST Sederhana & Berkualitas Tinggi (ANN-MLP):**
+   - Menggunakan arsitektur standar 3-lapis feedforward ($7 \rightarrow 16 \rightarrow 1$) ramah kurikulum pengenalan JST (Semester 3).
    - Dilatih pada **104.439 data riil satelit NASA FIRMS VIIRS (375m)**.
-   - Akurasi pengujian: **99.74%**, F1-Score: **0.9982** (20.888 data uji).
+   - Akurasi pengujian: **99.39%**, F1-Score: **0.9957** (20.888 data uji).
+   - Notebook Google Colab tersedia di [`notebooks/SiAgni_ANN_Prediksi_Risiko_Karhutla.ipynb`](file:///f:/Projects/FRFP/notebooks/SiAgni_ANN_Prediksi_Risiko_Karhutla.ipynb).
 2. **Cakupan Spasial Nasional (Sabang - Merauke):**
    - Bounding Box: $-11.00^\circ \text{ s.d. } 6.00^\circ$ LU/LS dan $95.00^\circ \text{ s.d. } 141.00^\circ$ BT.
    - Peta interaktif Leaflet dengan pemilih **38 Provinsi Indonesia** yang dikelompokkan per pulau (*flyTo camera navigation*).
@@ -33,6 +35,7 @@ FRFP/
 ├── backend/            # FastAPI v2.0 REST API, geo timezone service, SQLite DB, model inference
 ├── frontend/           # Next.js 14+ (App Router), Tailwind CSS, React-Leaflet, Emerald Liquid Glass
 ├── data/               # Dataset raw NASA FIRMS (fire_archive & fire_nrt)
+├── notebooks/          # Google Colab / Jupyter Notebook SiAgni-ANN untuk tugas kuliah AI (Semester 3)
 ├── run_system.bat      # 1-Click Runner: Menjalankan Backend (:8000) & Frontend (:3000)
 ├── run_frontend.bat    # Runner khusus Frontend Next.js (:3000)
 └── README.md

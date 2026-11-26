@@ -26,7 +26,7 @@ export default function ModelDiagnosticsPage() {
               Target PRD &ge; 85%
             </span>
           </div>
-          <div className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">99.74%</div>
+          <div className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">99.39%</div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-300 mt-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Melampaui target PRD (20.888 data uji)
           </div>
@@ -40,7 +40,7 @@ export default function ModelDiagnosticsPage() {
               Target PRD &ge; 0.80
             </span>
           </div>
-          <div className="text-3xl font-extrabold text-emerald-300 mt-2 font-mono">0.9982</div>
+          <div className="text-3xl font-extrabold text-emerald-300 mt-2 font-mono">0.9957</div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-200 mt-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-300" /> Seimbang antara Precision & Recall
           </div>
@@ -78,10 +78,10 @@ export default function ModelDiagnosticsPage() {
                     Aktual LOW RISK (0)
                   </td>
                   <td className="p-3 border border-emerald-500/20 bg-emerald-950/40 text-emerald-300 font-mono font-bold text-base">
-                    6.146 <span className="block text-[10px] text-gray-400 font-normal">(True Negative - 99.58%)</span>
+                    6.103 <span className="block text-[10px] text-gray-400 font-normal">(True Negative - 98.88%)</span>
                   </td>
                   <td className="p-3 border border-emerald-500/20 bg-red-950/20 text-gray-300 font-mono text-sm">
-                    26 <span className="block text-[10px] text-red-400 font-normal">(False Positive)</span>
+                    69 <span className="block text-[10px] text-red-400 font-normal">(False Positive)</span>
                   </td>
                 </tr>
                 <tr>
@@ -89,10 +89,10 @@ export default function ModelDiagnosticsPage() {
                     Aktual HIGH RISK (1)
                   </td>
                   <td className="p-3 border border-emerald-500/20 bg-red-950/20 text-gray-300 font-mono text-sm">
-                    28 <span className="block text-[10px] text-red-400 font-normal">(False Negative)</span>
+                    58 <span className="block text-[10px] text-red-400 font-normal">(False Negative)</span>
                   </td>
                   <td className="p-3 border border-emerald-500/20 bg-red-950/40 text-red-400 font-mono font-bold text-base">
-                    14.688 <span className="block text-[10px] text-gray-400 font-normal">(True Positive - 99.81%)</span>
+                    14.658 <span className="block text-[10px] text-gray-400 font-normal">(True Positive - 99.61%)</span>
                   </td>
                 </tr>
               </tbody>
@@ -106,11 +106,11 @@ export default function ModelDiagnosticsPage() {
             </div>
             <p className="text-gray-300 leading-relaxed">
               Dari 14.716 kejadian kebakaran berisiko tinggi pada data uji, model berhasil mendeteksi{" "}
-              <strong className="text-emerald-300">14.688 titik secara akurat (Sensitivitas / Recall 99.81%)</strong>.
+              <strong className="text-emerald-300">14.658 titik secara akurat (Sensitivitas / Recall 99.61%)</strong>.
             </p>
             <p className="text-gray-300 leading-relaxed">
               Tingkat kesalahan fatal (titik api berisiko tinggi terlewat) hanya{" "}
-              <strong className="text-red-400">28 kasus (0.19%)</strong>, menjadikannya sangat aman dan dapat diandalkan
+              <strong className="text-red-400">58 kasus (0.39%)</strong>, menjadikannya sangat aman dan dapat diandalkan
               sebagai instrumen pengarah inspeksi satgas darat Manggala Agni dan audit kepatuhan Gakkum KLHK.
             </p>
           </div>
@@ -120,10 +120,10 @@ export default function ModelDiagnosticsPage() {
       {/* Arsitektur Multi-Layer Perceptron (ANN-MLP) */}
       <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-5">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-emerald-400" /> Detail Topologi Arsitektur Jaringan (7 &rarr; 64 &rarr; 32 &rarr; 1)
+          <Cpu className="w-5 h-5 text-emerald-400" /> Detail Topologi Arsitektur Jaringan (7 &rarr; 16 &rarr; 1)
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="liquid-glass-card p-4 rounded-xl border-emerald-500/30">
             <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1">
               <Layers className="w-4 h-4" /> Input Layer
@@ -140,23 +140,12 @@ export default function ModelDiagnosticsPage() {
 
           <div className="liquid-glass-card p-4 rounded-xl border-emerald-500/30">
             <div className="flex items-center gap-2 text-emerald-300 font-bold mb-1">
-              <GitBranch className="w-4 h-4" /> Hidden Layer 1
+              <GitBranch className="w-4 h-4" /> Single Hidden Layer
             </div>
-            <div className="text-lg font-black text-white font-mono">64 Neuron</div>
+            <div className="text-lg font-black text-white font-mono">16 Neuron</div>
             <p className="mt-2 text-gray-300 text-[11px] leading-relaxed">
               Aktivasi: <strong>ReLU</strong>.<br />
-              Ekstraksi pola non-linear interaksi FRP dan suhu permukaan tanah.
-            </p>
-          </div>
-
-          <div className="liquid-glass-card p-4 rounded-xl border-emerald-500/30">
-            <div className="flex items-center gap-2 text-emerald-300 font-bold mb-1">
-              <GitBranch className="w-4 h-4" /> Hidden Layer 2
-            </div>
-            <div className="text-lg font-black text-white font-mono">32 Neuron</div>
-            <p className="mt-2 text-gray-300 text-[11px] leading-relaxed">
-              Aktivasi: <strong>ReLU</strong>.<br />
-              Kompresi representasi spasial dan reduksi noise deteksi latar.
+              Arsitektur sederhana 3-lapis feedforward standar kurikulum pengenalan JST Semester 3, mengekstrak interaksi non-linear FRP dan radiasi termal tanpa overfitting.
             </p>
           </div>
 
@@ -167,7 +156,7 @@ export default function ModelDiagnosticsPage() {
             <div className="text-lg font-black text-white font-mono">1 Neuron</div>
             <p className="mt-2 text-gray-300 text-[11px] leading-relaxed">
               Aktivasi: <strong>Sigmoid</strong>.<br />
-              Menghasilkan probabilitas kontinyu [0.0 - 1.0] untuk klasifikasi risiko biner.
+              Menghasilkan probabilitas kontinyu [0.0 - 1.0] untuk klasifikasi risiko biner (Low Risk vs High Risk).
             </p>
           </div>
         </div>
