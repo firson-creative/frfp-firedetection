@@ -1,24 +1,8 @@
-"""
-download_firms.py
-Skrip pembantu untuk mengunduh dataset riil NASA FIRMS VIIRS 375m untuk wilayah Indonesia (IDN)
-menggunakan NASA FIRMS API (MAP_KEY).
-
-Cara mendapatkan MAP_KEY gratis:
-Kunjungi: https://firms.modaps.eosdis.nasa.gov/api/map_key/
-"""
-
 import os
 import argparse
 import urllib.request
 
 def download_firms_data(map_key: str, source: str = "VIIRS_SNPP_NRT", days: int = 10, output_path: str = "../data/firms_real_indonesia.csv"):
-    """
-    Mengunduh data riil dari NASA FIRMS API untuk negara Indonesia (IDN).
-    Pilihan source:
-      - VIIRS_SNPP_NRT  (Suomi NPP 375m)
-      - VIIRS_NOAA20_NRT (NOAA-20 375m)
-      - VIIRS_NOAA21_NRT (NOAA-21 375m)
-    """
     url = f"https://firms.modaps.eosdis.nasa.gov/api/country/csv/{map_key}/{source}/IDN/{days}"
     print(f"[*] Menghubungi NASA FIRMS API...")
     print(f"[*] URL Sumber: https://firms.modaps.eosdis.nasa.gov/api/country/csv/[MAP_KEY]/{source}/IDN/{days}")

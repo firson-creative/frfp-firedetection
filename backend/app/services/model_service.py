@@ -1,8 +1,3 @@
-"""
-backend/app/services/model_service.py
-Layanan Inferensi Model ANN-MLP FRFP Skala Nasional & Pengayaan Waktu Satelit
-"""
-
 import os
 import math
 import datetime
@@ -14,15 +9,13 @@ class HotspotRiskModelService:
     def __init__(self):
         self.model = None
         self.scaler = None
-        self.model_type = None  # "SKLEARN_MLP" | "KERAS" | "RULE_BASED"
+        self.model_type = None
         self.is_loaded = False
         self.load_model()
 
     def load_model(self):
-        """Memuat artefak model (.pkl atau .keras) dan Scaler jika tersedia di disk."""
         import joblib
 
-        # Prioritas 1: Scikit-Learn MLP PKL
         if os.path.exists(MODEL_PKL_PATH) and os.path.exists(SCALER_PATH):
             try:
                 self.scaler = joblib.load(SCALER_PATH)
@@ -34,7 +27,6 @@ class HotspotRiskModelService:
             except Exception as e:
                 print(f"[WARN] Gagal memuat model .pkl: {e}")
 
-        # Prioritas 2: Keras model
         if os.path.exists(MODEL_KERAS_PATH) and os.path.exists(SCALER_PATH):
             try:
                 from tensorflow import keras
@@ -52,9 +44,6 @@ class HotspotRiskModelService:
         self.is_loaded = False
 
     def predict_single(self, features: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Melakukan inferensi risiko untuk 1 titik panas satelit VIIRS skala nasional Indonesia.
-        """
         lat = float(features['latitude'])
         lon = float(features['longitude'])
         brightness = float(features['brightness'])
@@ -84,7 +73,6 @@ class HotspotRiskModelService:
             else:
                 prob = float(self.model.predict(scaled_input, verbose=0)[0][0])
         else:
-            # Fallback Continuous Sigmoid dari Formula Ground Truth PRD
             frp_score = (frp - 15.0) / 10.0
             dt_score = (delta_t - 25.0) / 6.0
             z = max(frp_score, dt_score)
@@ -94,7 +82,6 @@ class HotspotRiskModelService:
         risk_class = "HIGH RISK" if prob >= 0.50 else "LOW RISK"
         risk_label = 1 if prob >= 0.50 else 0
 
-        # Rekomendasi Lapangan Nasional
         if not in_indonesia:
             audit_priority = "Peringatan (Luar Negeri)"
             recommendation = "Titik koordinat berada di luar kedaulatan teritori Republik Indonesia."

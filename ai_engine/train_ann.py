@@ -1,10 +1,3 @@
-"""
-train_ann.py
-Skrip Pelatihan Model Jaringan Syaraf Tiruan (ANN-MLP) untuk Klasifikasi Tingkat Risiko Karhutla
-Wilayah Percontohan: Provinsi Riau (Data Riil NASA FIRMS VIIRS 375m).
-Sesuai spesifikasi PRD Bab 5.
-"""
-
 import os
 import argparse
 import time
@@ -30,17 +23,14 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     start_time = time.time()
     print(f"[*] Memuat data berlabel riil Riau dari: {csv_path}")
 
-    # Baca CSV dengan pandas
     df = pd.read_csv(csv_path)
 
-    # Validasi kelengkapan fitur
     for col in FEATURE_COLS:
         if col not in df.columns:
             raise ValueError(f"Kolom fitur '{col}' tidak ditemukan dalam dataset!")
     if 'label' not in df.columns:
         raise ValueError("Kolom 'label' (0 / 1) tidak ditemukan dalam dataset!")
 
-    # Pastikan data bersih
     df = df.dropna(subset=FEATURE_COLS + ['label'])
 
     X = df[FEATURE_COLS].values
@@ -55,21 +45,16 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     print(f"    - HIGH RISK (1): {high_risk_count:,} ({high_risk_count / total_records * 100:.2f}%)")
     print(f"    - LOW RISK  (0): {low_risk_count:,} ({low_risk_count / total_records * 100:.2f}%)")
 
-    # Split Train (80%) dan Test (20%) secara stratified
     print("[*] Melakukan Stratified Train-Test Split (80% Train, 20% Test)...")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
 
-    # Normalisasi MinMaxScaler untuk 7 fitur
     print("[*] Menerapkan normalisasi MinMaxScaler pada 7 fitur masukan...")
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # Membangun Model Jaringan Syaraf Tiruan Sederhana (ANN-MLP: 7 -> 16 -> 1)
-    # Sesuai kurikulum pengenalan JST tingkat sarjana (Semester 3):
-    # 3-Layer Feedforward (Input: 7, Single Hidden Layer: 16 ReLU, Output: 1 Sigmoid)
     print("\n[*] Menginisialisasi arsitektur JST Sederhana (ANN-MLP): 7 -> 16 -> 1...")
     mlp = MLPClassifier(
         hidden_layer_sizes=(16,),
@@ -88,7 +73,6 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     print("[*] Melatih model ANN-MLP pada dataset riil NASA FIRMS...")
     mlp.fit(X_train_scaled, y_train)
 
-    # Evaluasi pada data uji (Test Set)
     print("\n" + "="*55)
     print("EVALUASI ILMIAH MODEL JST PADA TESTING SET:")
     print("="*55)
@@ -116,7 +100,6 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     print("\nClassification Report Lengkap:")
     print(classification_report(y_test, y_pred, target_names=['LOW RISK (0)', 'HIGH RISK (1)'], digits=4))
 
-    # Simpan Artefak
     os.makedirs(output_dir, exist_ok=True)
     model_path = os.path.join(output_dir, "ann_model_riau.pkl")
     scaler_path = os.path.join(output_dir, "scaler_riau.pkl")
@@ -127,7 +110,6 @@ def train_and_evaluate(csv_path: str, output_dir: str = "./artifacts"):
     print(f"[OK] Model tersimpan di : {model_path}")
     print(f"[OK] Scaler tersimpan di: {scaler_path}")
 
-    # Sinkronisasi langsung ke direktori backend/app/models
     backend_model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend", "app", "models"))
     os.makedirs(backend_model_dir, exist_ok=True)
     joblib.dump(mlp, os.path.join(backend_model_dir, "ann_model_riau.pkl"))

@@ -5,7 +5,6 @@ import { Activity, Cpu, CheckCircle2, Award, GitBranch, Layers, Sliders, Databas
 export default function ModelDiagnosticsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Page Header */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <Activity className="w-6 h-6 text-emerald-400" /> Diagnostik Arsitektur Jaringan Syaraf Tiruan (ANN-MLP)
@@ -16,9 +15,7 @@ export default function ModelDiagnosticsPage() {
         </p>
       </div>
 
-      {/* Target Metrik vs Hasil Evaluasi Nyata */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Akurasi */}
         <div className="liquid-glass-card p-5 rounded-2xl border-emerald-500/40 relative overflow-hidden">
           <div className="flex justify-between items-center text-xs font-semibold text-gray-400 uppercase">
             <span>Akurasi Pengujian</span>
@@ -32,7 +29,6 @@ export default function ModelDiagnosticsPage() {
           </div>
         </div>
 
-        {/* F1-Score */}
         <div className="liquid-glass-card p-5 rounded-2xl border-emerald-500/40 relative overflow-hidden">
           <div className="flex justify-between items-center text-xs font-semibold text-gray-400 uppercase">
             <span>F1-Score Model</span>
@@ -46,7 +42,6 @@ export default function ModelDiagnosticsPage() {
           </div>
         </div>
 
-        {/* Training Data Basis */}
         <div className="liquid-glass-card p-5 rounded-2xl border-emerald-500/40 relative overflow-hidden">
           <div className="text-xs font-semibold text-gray-400 uppercase">Basis Data Pelatihan Riil</div>
           <div className="text-3xl font-extrabold text-white mt-2 font-mono">104.439 Titik</div>
@@ -56,7 +51,6 @@ export default function ModelDiagnosticsPage() {
         </div>
       </div>
 
-      {/* Visualisasi Confusion Matrix Hasil Training Riil */}
       <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-4">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <Award className="w-5 h-5 text-amber-400" /> Confusion Matrix Hasil Pengujian (Test Set: 20.888 Sampel Riil)
@@ -117,7 +111,6 @@ export default function ModelDiagnosticsPage() {
         </div>
       </div>
 
-      {/* Arsitektur Multi-Layer Perceptron (ANN-MLP) */}
       <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-5">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <Cpu className="w-5 h-5 text-emerald-400" /> Detail Topologi Arsitektur Jaringan (7 &rarr; 16 &rarr; 1)
@@ -161,7 +154,6 @@ export default function ModelDiagnosticsPage() {
           </div>
         </div>
 
-        {/* Parameter Pelatihan */}
         <div className="bg-black/40 p-4 rounded-xl border border-emerald-500/20 text-xs">
           <div className="font-semibold text-emerald-300 mb-2">Parameter Training & Hyperparameter:</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-gray-300 font-mono">

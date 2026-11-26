@@ -1,9 +1,3 @@
-"""
-backend/app/main.py
-Server Utama REST API FastAPI
-FRFP - Fire Risk Foresight & Prioritization (ANN-MLP)
-"""
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +8,6 @@ from .routers import predict, hotspots
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Inisialisasi basis data SQLite
     print("[*] Menginisialisasi basis data FRFP SQLite...")
     init_db()
     yield
@@ -27,7 +20,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Konfigurasi CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -37,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Registrasi Router
 app.include_router(predict.router)
 app.include_router(hotspots.router)
 

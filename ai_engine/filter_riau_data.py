@@ -1,17 +1,3 @@
-"""
-filter_riau_data.py
-Modul untuk memfilter dataset NASA FIRMS (VIIRS 375m) ke dalam wilayah target Provinsi Riau
-dan menghasilkan label Ground Truth resmi sesuai spesifikasi PRD v1.1.0.
-
-Bounding Box Wilayah Riau:
-  Latitude  : -1.15 s.d. 2.45
-  Longitude : 100.00 s.d. 103.85
-
-Formula Ground Truth Resmi:
-  Label = 1 (HIGH RISK) jika (FRP >= 15.0 MW) ATAU (brightness - bright_t31 >= 25.0 K)
-  Label = 0 (LOW RISK)  jika kondisi lainnya
-"""
-
 import os
 import csv
 import argparse
@@ -64,7 +50,6 @@ def process_csv_streaming(input_path: str, output_path: str):
             if col not in field_map:
                 raise ValueError(f"Kolom wajib '{col}' tidak ditemukan di CSV! Kolom yang ada: {list(reader.fieldnames)}")
 
-        # Output fields: original fields + delta_t, label, risk_category
         out_fields = list(reader.fieldnames)
         for extra in ['delta_t', 'label', 'risk_category']:
             if extra not in out_fields:

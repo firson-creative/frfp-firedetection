@@ -89,7 +89,7 @@ export default function IngestPage() {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          timeout: 180000, // 3 minutes timeout for huge datasets (up to 1M rows)
+          timeout: 180000,
         }
       );
       setResponse(res.data);
@@ -128,7 +128,6 @@ export default function IngestPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <UploadCloud className="w-6 h-6 text-emerald-400" /> Ingesti Batch Data Satelit NASA FIRMS
@@ -139,7 +138,6 @@ export default function IngestPage() {
         </p>
       </div>
 
-      {/* Database Management Bar */}
       <div className="liquid-glass-card p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
           <Trash2 className="w-4 h-4 text-red-400" />
@@ -159,7 +157,6 @@ export default function IngestPage() {
         </button>
       </div>
 
-      {/* 1-Click Quick Test Datasets (<200 KB) */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -175,7 +172,6 @@ export default function IngestPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
-          {/* Kalimantan */}
           <button
             type="button"
             onClick={() => handleLoadSample("kalimantan")}
@@ -191,7 +187,6 @@ export default function IngestPage() {
             </div>
           </button>
 
-          {/* Sulawesi */}
           <button
             type="button"
             onClick={() => handleLoadSample("sulawesi")}
@@ -207,7 +202,6 @@ export default function IngestPage() {
             </div>
           </button>
 
-          {/* Papua */}
           <button
             type="button"
             onClick={() => handleLoadSample("papua")}
@@ -223,7 +217,6 @@ export default function IngestPage() {
             </div>
           </button>
 
-          {/* Nusantara Campuran */}
           <button
             type="button"
             onClick={() => handleLoadSample("nasional")}
@@ -255,7 +248,6 @@ export default function IngestPage() {
         </div>
       )}
 
-      {/* Upload Box */}
       <form onSubmit={handleUpload} className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-5">
         <div className="border-2 border-dashed border-emerald-500/30 hover:border-emerald-400/70 rounded-xl p-8 text-center transition flex flex-col items-center justify-center bg-black/40">
           <FileSpreadsheet className="w-12 h-12 text-emerald-400 mb-3" />
@@ -281,7 +273,6 @@ export default function IngestPage() {
           </label>
         </div>
 
-        {/* Options Row */}
         <div className="flex items-center gap-2 p-3 rounded-lg bg-black/30 border border-emerald-500/10 text-xs">
           <input
             type="checkbox"
@@ -313,7 +304,6 @@ export default function IngestPage() {
         </button>
       </form>
 
-      {/* Upload Results Summary */}
       {response && (
         <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/30 space-y-6 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -329,7 +319,6 @@ export default function IngestPage() {
             </Link>
           </div>
 
-          {/* 4 Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="liquid-glass-card p-3 rounded-xl">
               <span className="text-[11px] text-gray-400">Total Baris File</span>
@@ -357,7 +346,6 @@ export default function IngestPage() {
             </div>
           </div>
 
-          {/* Sample Table with Date/Time and Region */}
           <div className="space-y-2">
             <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
               Sampel Titik Terklasifikasi (Menampilkan hingga 15 Titik Pertama):

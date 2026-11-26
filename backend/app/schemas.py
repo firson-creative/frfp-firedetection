@@ -1,15 +1,7 @@
-"""
-backend/app/schemas.py
-Skema Validasi Pydantic v2 untuk FRFP - Fire Risk Foresight & Prioritization
-"""
-
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 class HotspotInput(BaseModel):
-    """
-    7 Fitur Masukan Sesuai PRD + Metadata Tanggal & Waktu Akuisisi Satelit
-    """
     latitude: float = Field(
         ...,
         description="Koordinat lintang (Rentang Indonesia: -11.00 s.d. 6.00)",
@@ -70,8 +62,8 @@ class PredictionResponse(BaseModel):
     bright_t31: float
     delta_t: float
     probability: float
-    risk_class: str  # "HIGH RISK" | "LOW RISK"
-    risk_label: int  # 1 | 0
+    risk_class: str
+    risk_label: int
     is_indonesia: bool
     province_region: str
     acq_date: str
@@ -101,7 +93,7 @@ class SyncNRTResponse(BaseModel):
 
 class GeoJSONGeometry(BaseModel):
     type: str = "Point"
-    coordinates: List[float]  # [longitude, latitude]
+    coordinates: List[float]
 
 class GeoJSONFeature(BaseModel):
     type: str = "Feature"

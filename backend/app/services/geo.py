@@ -1,17 +1,8 @@
-"""
-backend/app/services/geo.py
-Layanan Validasi Geografis Nasional, Masking Daratan (Landmask), Zona Waktu, dan Wilayah Indonesia
-"""
-
 import os
 import json
 import datetime
 from typing import Dict, Any, Tuple, Optional
 from ..config import INDONESIA_BOUNDING_BOX
-
-# =========================================================================
-# SPATIAL LANDMASK ENGINE (MENGHILANGKAN TITIK DI LAUT & PERAIRAN LEPAS)
-# =========================================================================
 
 _SPATIAL_INITIALIZED = False
 _TREE = None
@@ -91,23 +82,11 @@ def _init_spatial_engine():
 _init_spatial_engine()
 
 def is_point_in_indonesia(latitude: float, longitude: float) -> bool:
-    """
-    Mengecek apakah koordinat berada di dalam Bounding Box Sabang sampai Merauke.
-    Latitude : -11.00 s.d. 6.00
-    Longitude: 95.00 s.d. 141.00
-    """
     lat_ok = INDONESIA_BOUNDING_BOX["lat_min"] <= latitude <= INDONESIA_BOUNDING_BOX["lat_max"]
     lon_ok = INDONESIA_BOUNDING_BOX["lon_min"] <= longitude <= INDONESIA_BOUNDING_BOX["lon_max"]
     return lat_ok and lon_ok
 
 def is_point_on_indonesia_land(latitude: float, longitude: float, coastal_tolerance_deg: float = 0.018) -> bool:
-    """
-    Validasi Daratan (Landmask):
-    Mengecek apakah titik berada di daratan pulau Indonesia atau berada di laut lepas/perairan.
-    Titik anomali termal di laut lepas (seperti suar gas rig minyak lepas pantai / gas flaring)
-    akan mengembalikan False sehingga TIDAK dideteksi sebagai karhutla daratan.
-    Toleransi 0.018 derajat (~2 km) diberikan untuk area pesisir, muara, dan mangrove tepi pantai.
-    """
     if not is_point_in_indonesia(latitude, longitude):
         return False
 
@@ -116,36 +95,24 @@ def is_point_on_indonesia_land(latitude: float, longitude: float, coastal_tolera
         from shapely.geometry import Point
         pt = Point(longitude, latitude)
 
-        # 1. Cek langsung apakah berada di dalam poligon daratan
         candidates = _TREE.query(pt)
         for idx in candidates:
             if _GEOMS[idx].contains(pt):
                 return True
 
-        # 2. Toleransi pesisir pantai (mangrove / rawa gambut tepi pantai)
         min_dist = min(_GEOMS[idx].distance(pt) for idx in range(len(_GEOMS)))
         return min_dist <= coastal_tolerance_deg
 
-    # Fallback jika polygon belum termuat: eliminasi perairan terbuka utama
-    # Selat Makassar (antara Kalsel/Kaltim dan Sulbar/Sulsel)
     if -4.5 <= latitude <= 0.5 and 117.5 < longitude < 118.6:
         return False
-    # Laut Jawa Tengah
     if -5.5 <= latitude <= -4.0 and 108.0 <= longitude <= 114.0:
         return False
-    # Teluk Bone (antara Sulsel dan Sultra)
     if -4.8 <= latitude <= -3.0 and 120.6 <= longitude <= 121.2:
         return False
 
     return True
 
 def get_local_timezone(longitude: float) -> Tuple[str, int]:
-    """
-    Menghitung zona waktu Indonesia berdasarkan bujur:
-    WIB  : < 110° BT (UTC+7)
-    WITA : 110° - 125° BT (UTC+8)
-    WIT  : >= 125° BT (UTC+9)
-    """
     if longitude < 110.0:
         return ("WIB", 7)
     elif longitude < 125.0:
@@ -159,10 +126,6 @@ def format_satellite_timestamp(
     longitude: float = 101.4478,
     daynight: str = "D"
 ) -> str:
-    """
-    Mengonversi tanggal dan jam lintasan satelit (UTC) ke waktu lokal (WIB/WITA/WIT).
-    acq_time berformat 4 digit (misal '0320' -> 03:20 UTC).
-    """
     tz_label, tz_offset = get_local_timezone(longitude)
     dn_label = "Siang" if daynight == "D" else "Malam"
 
@@ -177,17 +140,12 @@ def format_satellite_timestamp(
         date_obj = datetime.datetime.strptime(acq_date.strip(), "%Y-%m-%d")
         dt_utc = date_obj.replace(hour=hour_utc, minute=minute_utc)
 
-        # Tambahkan offset zona waktu lokal
         dt_local = dt_utc + datetime.timedelta(hours=tz_offset)
         return f"{dt_local.strftime('%Y-%m-%d %H:%M')} {tz_label} ({dn_label})"
     except Exception:
         return f"{acq_date} {time_str} ({tz_label} / {dn_label})"
 
 def get_indonesia_region(latitude: float, longitude: float) -> str:
-    """
-    Penentuan Provinsi Resmi Indonesia Berbasis Poligon Spasial BAKOSURTANAL.
-    Akurat 100% dan bebas dari tumpang-tindih (overlap) Kalimantan vs Sulawesi.
-    """
     if not is_point_in_indonesia(latitude, longitude):
         return "Di luar Teritori Indonesia"
 
@@ -203,7 +161,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
                 detected_raw = _PROPS[idx].get("Propinsi")
                 break
 
-        # Jika di tepi pantai, gunakan poligon darat terdekat dalam toleransi ~2 km
         if not detected_raw:
             min_idx = min(range(len(_GEOMS)), key=lambda i: _GEOMS[i].distance(pt))
             if _GEOMS[min_idx].distance(pt) <= 0.018:
@@ -212,7 +169,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
         if detected_raw:
             prov_name = BAKOSURTANAL_TO_PROVINCE.get(detected_raw, f"Provinsi {detected_raw}")
 
-            # Penyesuaian Pemekaran 4 Provinsi Baru di Papua (UU 2022)
             if detected_raw == "PAPUA":
                 if latitude <= -5.0:
                     return "Provinsi Papua Selatan (Merauke)"
@@ -230,11 +186,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
 
             return prov_name
 
-    # =========================================================================
-    # FALLBACK GEOGRAFIS MATEMATIS PERSISI (JIKA GEOJSON GAGAL DIMUAT)
-    # =========================================================================
-
-    # Sulawesi (Lon: 118.6 s.d. 126.0) - Cek DULUAN sebelum Kalimantan!
     if longitude >= 118.6 and longitude <= 126.0 and -6.0 <= latitude <= 4.0:
         if latitude > 1.2 and longitude >= 123.5:
             return "Provinsi Sulawesi Utara"
@@ -249,7 +200,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
         else:
             return "Provinsi Sulawesi Selatan"
 
-    # Kalimantan (Lon: 108.5 s.d. 117.5, batas timur daratan adalah Selat Makassar)
     elif 108.5 <= longitude <= 117.5 and -4.5 <= latitude <= 4.5:
         if longitude < 112.5:
             return "Provinsi Kalimantan Barat"
@@ -264,7 +214,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
             else:
                 return "Provinsi Kalimantan Timur"
 
-    # Sumatera (Lon: 95.0 s.d. 106.0)
     elif longitude < 106.0 and latitude > -6.0:
         if latitude > 3.0:
             return "Provinsi Aceh"
@@ -282,7 +231,6 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
         else:
             return "Provinsi Lampung"
 
-    # Jawa & Bali
     elif latitude <= -5.5 and longitude <= 116.0:
         if longitude < 107.0:
             return "Provinsi Jawa Barat"
@@ -293,21 +241,18 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
         else:
             return "Provinsi Bali"
 
-    # Nusa Tenggara
     elif longitude >= 116.0 and longitude <= 125.5 and latitude <= -8.0:
         if longitude < 119.5:
             return "Provinsi Nusa Tenggara Barat"
         else:
             return "Provinsi Nusa Tenggara Timur"
 
-    # Maluku
     elif 125.5 <= longitude < 132.0:
         if latitude > -1.0:
             return "Provinsi Maluku Utara"
         else:
             return "Provinsi Maluku"
 
-    # Papua
     elif longitude >= 132.0:
         if latitude <= -5.0:
             return "Provinsi Papua Selatan (Merauke)"
@@ -321,14 +266,10 @@ def get_indonesia_region(latitude: float, longitude: float) -> str:
     return "Laut / Perairan Lepas"
 
 def get_indonesia_subregion(latitude: float, longitude: float, province: str = "") -> str:
-    """
-    Estimasi akurat Kabupaten / Kota berdasarkan koordinat geografis dan provinsi.
-    """
     prov = province or get_indonesia_region(latitude, longitude)
     if prov == "Laut / Perairan Lepas" or "Luar" in prov:
         return "Perairan Lepas"
 
-    # 1. Sulawesi Barat (Sulbar)
     if "Sulawesi Barat" in prov:
         if latitude <= -3.3:
             return "Kab. Polewali Mandar"
@@ -343,7 +284,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Pasangkayu"
 
-    # 2. Sulawesi Selatan (Sulsel)
     elif "Sulawesi Selatan" in prov:
         if latitude >= -2.7 and longitude >= 120.8:
             return "Kab. Luwu Timur"
@@ -397,7 +337,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Luwu"
 
-    # 3. Sulawesi Tengah (Sulteng)
     elif "Sulawesi Tengah" in prov:
         if latitude <= -1.8 and longitude >= 121.2:
             return "Kab. Morowali"
@@ -414,7 +353,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Poso"
 
-    # 4. Sulawesi Tenggara (Sultra)
     elif "Sulawesi Tenggara" in prov:
         if latitude <= -4.8:
             return "Kab. Buton"
@@ -427,7 +365,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Konawe"
 
-    # 5. Kalimantan Selatan (Kalsel)
     elif "Kalimantan Selatan" in prov:
         if longitude >= 115.8:
             return "Kab. Kotabaru"
@@ -442,7 +379,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Tapin"
 
-    # 6. Kalimantan Tengah (Kalteng)
     elif "Kalimantan Tengah" in prov:
         if -3.5 <= latitude <= -1.8 and 113.8 <= longitude <= 114.6:
             return "Kab. Pulang Pisau"
@@ -459,7 +395,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Pulang Pisau"
 
-    # 7. Kalimantan Barat (Kalbar)
     elif "Kalimantan Barat" in prov:
         if latitude <= -1.0:
             return "Kab. Ketapang"
@@ -472,7 +407,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Kubu Raya"
 
-    # 8. Riau
     elif "Riau" in prov and "Kepulauan" not in prov:
         if latitude >= 1.5 and longitude <= 101.6:
             return "Kota Dumai"
@@ -497,7 +431,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Siak"
 
-    # 9. Papua Selatan
     elif "Papua Selatan" in prov:
         if latitude <= -6.8:
             return "Kab. Merauke"
@@ -508,7 +441,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Mappi"
 
-    # 10. Papua (Umum)
     elif "Papua" in prov:
         if longitude <= 134.5:
             return "Kab. Manokwari"
@@ -519,7 +451,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Nabire"
 
-    # 11. Sumatera Selatan
     elif "Sumatera Selatan" in prov:
         if longitude >= 104.8 and latitude <= -3.0:
             return "Kab. Ogan Komering Ilir"
@@ -530,7 +461,6 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Muara Enim"
 
-    # 12. Jambi
     elif "Jambi" in prov:
         if longitude >= 103.5 and latitude <= -1.4:
             return "Kab. Muaro Jambi"
@@ -541,6 +471,5 @@ def get_indonesia_subregion(latitude: float, longitude: float, province: str = "
         else:
             return "Kab. Tebo"
 
-    # Default fallback
     clean_prov = prov.replace("Provinsi ", "").replace(" (Merauke)", "")
     return f"Kabupaten Wilayah {clean_prov}"

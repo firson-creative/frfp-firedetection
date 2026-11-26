@@ -8,7 +8,7 @@ import { AlertTriangle, CheckCircle, ShieldAlert, Thermometer, Wind } from "luci
 interface HotspotFeature {
   type: string;
   geometry: {
-    coordinates: [number, number]; // [lon, lat]
+    coordinates: [number, number];
   };
   properties: {
     id: number;
@@ -54,7 +54,6 @@ export default function RiauMap({
     );
   }
 
-  // Bounding Box Riau Bounds: [[lat_min, lon_min], [lat_max, lon_max]]
   const riauBounds: [[number, number], [number, number]] = [
     [-1.15, 100.0],
     [2.45, 103.85],
@@ -68,7 +67,7 @@ export default function RiauMap({
   return (
     <div className="w-full h-[580px] rounded-xl overflow-hidden shadow-2xl border border-brand-deepBlue/50 relative">
       <MapContainer
-        center={[0.5071, 101.4478]} // Pekanbaru, Riau
+        center={[0.5071, 101.4478]}
         zoom={8}
         scrollWheelZoom={true}
         className="w-full h-full z-10"
@@ -78,7 +77,6 @@ export default function RiauMap({
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Boundary Box Provinsi Riau */}
         <Rectangle
           bounds={riauBounds}
           pathOptions={{
@@ -89,7 +87,6 @@ export default function RiauMap({
           }}
         />
 
-        {/* Render Hotspots */}
         {filteredHotspots.map((item) => {
           const isHigh = item.properties.risk_class === "HIGH RISK";
           const [lon, lat] = item.geometry.coordinates;
@@ -165,7 +162,6 @@ export default function RiauMap({
         })}
       </MapContainer>
 
-      {/* Map Legend Overlay */}
       <div className="absolute bottom-5 right-5 z-20 bg-brand-navy/90 backdrop-blur-md p-3 rounded-lg border border-brand-deepBlue shadow-lg text-xs">
         <div className="font-bold text-white mb-2 flex items-center gap-1.5">
           <ShieldAlert className="w-3.5 h-3.5 text-brand-cyan" /> Legenda Risiko Satelit

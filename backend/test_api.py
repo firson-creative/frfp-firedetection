@@ -1,19 +1,12 @@
-"""
-test_api.py
-Skrip pengujian unit untuk API FRFP Nasional (Single, Batch, Hotspots, Sync NRT)
-"""
-
 from fastapi.testclient import TestClient
 from app.main import app
 
 def test_endpoints():
     with TestClient(app) as client:
-        # 1. Test Root
         res = client.get("/")
         assert res.status_code == 200, res.text
         print("[PASS] Root GET /:", res.json()["system"])
 
-        # 2. Test Predict Single (Nasional - Kalimantan Tengah)
         payload_kalteng = {
             "latitude": -1.8200,
             "longitude": 113.4500,
@@ -32,19 +25,16 @@ def test_endpoints():
         print(f"[PASS] POST /api/v1/predict ({data['province_region']}): {data['risk_class']} | {data['local_time_str']}")
         assert data["is_indonesia"] is True
 
-        # 3. Test Sync NRT
         res_sync = client.post("/api/v1/sync-nrt?batch_size=20")
         assert res_sync.status_code == 200, res_sync.text
         sync_data = res_sync.json()
         print(f"[PASS] POST /api/v1/sync-nrt: {sync_data['message']} (Added: {sync_data['added_count']})")
 
-        # 4. Test Hotspots GeoJSON
         res_geo = client.get("/api/v1/hotspots?limit=10")
         assert res_geo.status_code == 200
         geo = res_geo.json()
         print(f"[PASS] GET /api/v1/hotspots: {len(geo['features'])} features returned")
 
-        # 5. Test Stats
         res_stats = client.get("/api/v1/stats")
         assert res_stats.status_code == 200
         print("[PASS] GET /api/v1/stats:", res_stats.json())

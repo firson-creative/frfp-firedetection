@@ -1,8 +1,3 @@
-"""
-run.py
-Skrip runner untuk menjalankan FastAPI server dengan Uvicorn
-"""
-
 import uvicorn
 
 if __name__ == "__main__":

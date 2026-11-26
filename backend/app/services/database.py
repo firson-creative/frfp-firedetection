@@ -1,8 +1,3 @@
-"""
-backend/app/services/database.py
-Manajemen Basis Data SQLite untuk FRFP - Fire Risk Foresight & Prioritization
-"""
-
 import sqlite3
 import datetime
 from typing import List, Dict, Any, Optional
@@ -14,7 +9,6 @@ def get_db_connection():
     return conn
 
 def init_db():
-    """Membuat tabel-tabel SQLite dengan skema lengkap metadata tanggal & waktu satelit."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -46,7 +40,6 @@ def init_db():
     );
     """)
 
-    # Self-healing migration for existing databases
     cursor.execute("PRAGMA table_info(hotspots);")
     existing_cols = [row[1] for row in cursor.fetchall()]
     needed_cols = {
@@ -69,7 +62,6 @@ def init_db():
     conn.close()
 
 def clear_hotspots():
-    """Menghapus semua data hotspot dari tabel SQLite."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM hotspots;")
@@ -210,13 +202,12 @@ def get_statistics() -> Dict[str, Any]:
     cursor.execute("SELECT COUNT(*) FROM hotspots WHERE audit_status = 'PENDING' AND risk_class = 'HIGH RISK'")
     pending_audit = cursor.fetchone()[0]
 
-    # Ambil 5 provinsi paling rawan
     cursor.execute("""
-    SELECT province_region, COUNT(*) as cnt 
-    FROM hotspots 
-    WHERE risk_class = 'HIGH RISK' 
-    GROUP BY province_region 
-    ORDER BY cnt DESC 
+    SELECT province_region, COUNT(*) as cnt
+    FROM hotspots
+    WHERE risk_class = 'HIGH RISK'
+    GROUP BY province_region
+    ORDER BY cnt DESC
     LIMIT 5
     """)
     top_provinces = [{"province": row[0], "count": row[1]} for row in cursor.fetchall()]

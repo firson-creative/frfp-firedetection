@@ -1,10 +1,3 @@
-"""
-generate_riau_samples.py
-Skrip untuk menghasilkan data sintetis realistis berformat NASA FIRMS VIIRS 375m
-khusus untuk pengembangan lokal (Sprint 1) sebelum data historis resmi diunduh.
-Mendukung standar library bawaan Python (tanpa dependensi wajib).
-"""
-
 import os
 import csv
 import random
@@ -14,7 +7,6 @@ def generate_samples_dict(n_samples: int = 1000, seed: int = 42):
     random.seed(seed)
     rows = []
 
-    # 90% sampel di dalam Bounding Box Riau, 10% di luar Riau (untuk menguji filter)
     n_in = int(n_samples * 0.90)
 
     for i in range(n_samples):
@@ -30,7 +22,6 @@ def generate_samples_dict(n_samples: int = 1000, seed: int = 42):
         track = round(random.uniform(0.36, 0.78), 2)
         bright_t31 = round(min(325.0, max(280.0, random.gauss(298.0, 8.0))), 2)
 
-        # FRP exponential distribution
         frp_raw = random.expovariate(1.0 / 12.0)
         frp = round(min(450.0, max(0.5, frp_raw)), 2)
 

@@ -71,7 +71,6 @@ export default function PredictPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Page Header */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <Zap className="w-6 h-6 text-emerald-400" /> Uji Prediksi Cepat Titik Panas Satelit
@@ -82,9 +81,7 @@ export default function PredictPage() {
         </p>
       </div>
 
-      {/* Form Input Grid */}
       <form onSubmit={handleSubmit} className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 space-y-6">
-        {/* Section 1: Tanggal & Waktu Akuisisi Satelit */}
         <div>
           <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-3">
             <Clock className="w-4 h-4" /> Waktu Akuisisi Satelit NASA FIRMS
@@ -134,7 +131,6 @@ export default function PredictPage() {
           </div>
         </div>
 
-        {/* Section 2: Koordinat Spasial */}
         <div>
           <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-3">
             <Compass className="w-4 h-4" /> Koordinat Geografis
@@ -171,7 +167,6 @@ export default function PredictPage() {
           </div>
         </div>
 
-        {/* Section 3: 5 Parameter Sensor Termal */}
         <div>
           <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-3">
             <Thermometer className="w-4 h-4" /> Parameter Termal & Geometri Satelit VIIRS
@@ -274,7 +269,6 @@ export default function PredictPage() {
         </button>
       </form>
 
-      {/* Hasil Prediksi Model */}
       {result && (
         <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/30 shadow-glass space-y-4 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-emerald-500/20">
@@ -307,7 +301,6 @@ export default function PredictPage() {
             </div>
           </div>
 
-          {/* Regional & Timezone Analysis */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-black/40 p-3.5 rounded-xl border border-emerald-500/20">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-400" />
@@ -325,7 +318,6 @@ export default function PredictPage() {
             </div>
           </div>
 
-          {/* Metrik Turunan */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="bg-black/30 p-3 rounded-lg border border-emerald-500/20">
               <span className="text-gray-400">Delta Suhu (&Delta;T):</span>
@@ -349,7 +341,6 @@ export default function PredictPage() {
             </div>
           </div>
 
-          {/* Rekomendasi Aksi */}
           <div className="p-3.5 bg-emerald-950/60 rounded-xl border border-emerald-500/30 text-xs text-gray-200">
             <strong className="text-emerald-300 block mb-1">Rekomendasi Operasional Satgas & Gakkum:</strong>
             <p className="leading-relaxed">{result.recommendation}</p>

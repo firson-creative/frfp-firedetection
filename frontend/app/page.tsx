@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Dynamic import Leaflet map component to prevent SSR hydration errors
 const IndonesiaMap = dynamic(() => import("@/components/IndonesiaMap"), {
   ssr: false,
   loading: () => (
@@ -44,12 +43,10 @@ export default function DashboardPage() {
   const [selectedRisk, setSelectedRisk] = useState<string>("ALL");
   const [backendError, setBackendError] = useState<boolean>(false);
 
-  // Near-Realtime Auto-Sync States
   const [isSyncing, setIsSyncing] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
-  // Fallback Data Representatif Nasional (Sabang - Merauke) jika backend baru booting
   const fallbackHotspots = [
     {
       type: "Feature",
@@ -207,7 +204,6 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  // Handle Manual and Auto NRT Sync
   const handleSyncNRT = async () => {
     setIsSyncing(true);
     setSyncFeedback(null);
@@ -225,7 +221,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Auto-sync polling every 30 seconds when enabled
   useEffect(() => {
     if (!autoSyncEnabled) return;
     const interval = setInterval(() => {
@@ -236,7 +231,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero / Header Wilayah Nasional */}
       <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 relative overflow-hidden">
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -259,9 +253,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Quick Actions & NRT Live Sync */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Auto-Sync Toggle */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/40 border border-emerald-500/20 text-xs">
               <Radio className={`w-3.5 h-3.5 ${autoSyncEnabled ? "text-emerald-400 animate-pulse" : "text-gray-500"}`} />
               <span className="text-gray-300 font-medium">Live NRT Feed:</span>
@@ -277,7 +269,6 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Sync Now Button */}
             <button
               onClick={handleSyncNRT}
               disabled={isSyncing}
@@ -296,7 +287,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Sync Feedback Toast */}
         {syncFeedback && (
           <div className="mt-4 p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-400/50 text-emerald-200 text-xs flex items-center gap-2 animate-fade-in">
             <Sparkles className="w-4 h-4 text-emerald-300 flex-shrink-0" />
@@ -323,9 +313,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 4 Liquid Glass Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Hotspot Nasional */}
         <div className="liquid-glass-card rounded-2xl p-5 relative overflow-hidden">
           <div className="flex items-center justify-between text-emerald-300/80 text-xs font-semibold uppercase tracking-wider">
             <span>Total Hotspot Nasional</span>
@@ -335,7 +323,6 @@ export default function DashboardPage() {
           <div className="mt-1 text-xs text-emerald-100/60">Terdeteksi di Sabang s.d. Merauke</div>
         </div>
 
-        {/* High Risk (Prioritas Intervensi) */}
         <div className="liquid-glass-card rounded-2xl p-5 border-red-500/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 rounded-bl-full" />
           <div className="flex items-center justify-between text-red-400 text-xs font-semibold uppercase tracking-wider">
@@ -348,7 +335,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Low Risk (Pemantauan Satelit Rutin) */}
         <div className="liquid-glass-card rounded-2xl p-5 border-emerald-500/30 relative overflow-hidden">
           <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold uppercase tracking-wider">
             <span>Low Risk (Rutin)</span>
@@ -358,7 +344,6 @@ export default function DashboardPage() {
           <div className="mt-1 text-xs text-emerald-100/60">Pemantauan satelit berkala</div>
         </div>
 
-        {/* Antrean Surat Tugas Audit */}
         <div className="liquid-glass-card rounded-2xl p-5 relative overflow-hidden">
           <div className="flex items-center justify-between text-amber-400 text-xs font-semibold uppercase tracking-wider">
             <span>Antrean Audit & Tugas</span>
@@ -375,7 +360,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Peta GIS & Kontrol Spasial */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -388,7 +372,6 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          {/* Filter Tombol Risiko */}
           <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-emerald-500/20 text-xs font-medium">
             <button
               onClick={() => setSelectedRisk("ALL")}
@@ -425,7 +408,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Indonesia Interactive Map */}
         <IndonesiaMap hotspots={hotspots} selectedRisk={selectedRisk} />
       </div>
     </div>

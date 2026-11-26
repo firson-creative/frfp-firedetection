@@ -18,7 +18,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Liquid Glass Utilities */
 .liquid-glass {
   background: rgba(8, 30, 24, 0.65);
   backdrop-filter: blur(16px);
@@ -55,7 +54,6 @@ body {
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
-/* Custom Marker Pulse */
 @keyframes pulse-risk {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -73,7 +71,6 @@ body {
   border-radius: 9999px;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
@@ -89,7 +86,6 @@ body {
   background: #10b98188;
 }
 
-/* Custom Leaflet popup overrides */
 .leaflet-popup-content-wrapper {
   background: rgba(6, 24, 20, 0.94) !important;
   backdrop-filter: blur(12px) !important;

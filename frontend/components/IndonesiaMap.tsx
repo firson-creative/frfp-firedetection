@@ -25,7 +25,7 @@ import {
 export interface HotspotFeature {
   type: string;
   geometry: {
-    coordinates: [number, number]; // [lon, lat]
+    coordinates: [number, number];
   };
   properties: {
     id: number;
@@ -50,7 +50,6 @@ export interface HotspotFeature {
   };
 }
 
-// 38 Provinces of Indonesia categorized by Island
 export const INDONESIA_PROVINCES = [
   {
     group: "Nasional",
@@ -133,7 +132,6 @@ export const INDONESIA_PROVINCES = [
   },
 ];
 
-// Helper Leaflet Map Controller to fly to coordinates
 function MapController({ targetCoord }: { targetCoord: { lat: number; lon: number; zoom: number } | null }) {
   const map = useMap();
   useEffect(() => {
@@ -175,7 +173,6 @@ export default function IndonesiaMap({
     );
   }
 
-  // Bounding Box Seluruh Indonesia: lat: -11.0 to 6.0, lon: 95.0 to 141.0
   const indonesiaBounds: [[number, number], [number, number]] = [
     [-11.0, 95.0],
     [6.0, 141.0],
@@ -192,21 +189,16 @@ export default function IndonesiaMap({
     }
   };
 
-  // Filter Hotspots by Risk, Time, and Selected Province (if not Seluruh Nusantara)
   const filteredHotspots = hotspots.filter((item) => {
     const p = item.properties;
 
-    // Risk Filter
     if (selectedRisk !== "ALL" && p.risk_class !== selectedRisk) {
       return false;
     }
 
-    // Time Filter (Acquisition Date)
     if (timeFilter !== "ALL" && p.acq_date) {
       const today = new Date().toISOString().split("T")[0];
       if (timeFilter === "TODAY" && p.acq_date !== today) {
-        // if today doesn't match, also accept latest date in dataset
-        // (to preserve user test data viewing)
       }
     }
 
@@ -215,9 +207,7 @@ export default function IndonesiaMap({
 
   return (
     <div className="space-y-3">
-      {/* Quick Navigation Control Bar */}
       <div className="liquid-glass p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Dropdown 38 Provinsi */}
         <div className="flex items-center gap-2">
           <Compass className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span className="text-gray-300 font-semibold hidden sm:inline">Loncat ke Wilayah:</span>
@@ -238,7 +228,6 @@ export default function IndonesiaMap({
           </select>
         </div>
 
-        {/* Time Window Filter */}
         <div className="flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-emerald-400" />
           <span className="text-gray-300 font-semibold hidden md:inline">Waktu Rekam:</span>
@@ -277,10 +266,9 @@ export default function IndonesiaMap({
         </div>
       </div>
 
-      {/* Map Container */}
       <div className="w-full h-[600px] rounded-2xl overflow-hidden shadow-glass border border-emerald-500/30 relative">
         <MapContainer
-          center={[-0.7893, 113.9213]} // Pusat Indonesia (Nusantara)
+          center={[-0.7893, 113.9213]}
           zoom={5}
           scrollWheelZoom={true}
           className="w-full h-full z-10"
@@ -292,7 +280,6 @@ export default function IndonesiaMap({
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Batas Bounding Box Nasional Indonesia */}
           <Rectangle
             bounds={indonesiaBounds}
             pathOptions={{
@@ -303,7 +290,6 @@ export default function IndonesiaMap({
             }}
           />
 
-          {/* Render Titik-Titik Hotspot */}
           {filteredHotspots.map((item) => {
             const isHigh = item.properties.risk_class === "HIGH RISK";
             const [lon, lat] = item.geometry.coordinates;
@@ -324,7 +310,6 @@ export default function IndonesiaMap({
               >
                 <Popup className="custom-popup">
                   <div className="p-2 min-w-[260px] text-gray-100">
-                    {/* Header Popup */}
                     <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30">
                       <span
                         className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
@@ -340,7 +325,6 @@ export default function IndonesiaMap({
                       </span>
                     </div>
 
-                    {/* Regional & Timezone Banner */}
                     <div className="mt-2 text-xs font-semibold text-emerald-200 flex items-center gap-1.5">
                       <span>📍</span>
                       <span>
@@ -350,7 +334,6 @@ export default function IndonesiaMap({
                       </span>
                     </div>
 
-                    {/* Acquisition Timestamp & Day/Night */}
                     <div className="mt-1.5 bg-black/50 p-2 rounded-lg border border-emerald-500/20 text-[11px] space-y-1">
                       <div className="flex items-center justify-between text-gray-300">
                         <span className="flex items-center gap-1">
@@ -374,7 +357,6 @@ export default function IndonesiaMap({
                       </div>
                     </div>
 
-                    {/* Sensor Metric Grid */}
                     <div className="grid grid-cols-2 gap-1.5 mt-2 text-[11px] bg-emerald-950/40 p-2 rounded-lg border border-emerald-500/20">
                       <div>
                         <span className="text-gray-400 text-[10px]">Suhu Kanal I-4:</span>
@@ -396,14 +378,12 @@ export default function IndonesiaMap({
                       </div>
                     </div>
 
-                    {/* Recommendation */}
                     {p.recommendation && (
                       <div className="mt-2 text-[10px] text-gray-300 italic border-l-2 border-emerald-400 pl-2">
                         {p.recommendation}
                       </div>
                     )}
 
-                    {/* Action Link */}
                     <div className="mt-3 pt-2 border-t border-emerald-500/20 flex justify-end">
                       <a
                         href="/priority-list"
@@ -419,7 +399,6 @@ export default function IndonesiaMap({
           })}
         </MapContainer>
 
-        {/* Map Legend Overlay in Liquid Glass */}
         <div className="absolute bottom-5 right-5 z-20 liquid-glass p-3.5 rounded-xl text-xs max-w-xs">
           <div className="font-bold text-emerald-300 mb-2 flex items-center gap-1.5">
             <ShieldAlert className="w-4 h-4 text-emerald-400" />

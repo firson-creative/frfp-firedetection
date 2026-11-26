@@ -66,7 +66,6 @@ export default function Navbar() {
     <header className="liquid-glass border-b border-emerald-500/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo & Title */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-950/80 border border-emerald-400/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.35)] group-hover:scale-105 group-hover:border-emerald-400 transition-all">
               <ShieldCheck className="w-5 h-5" />
@@ -88,7 +87,6 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Main Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
             {navLinks.map((item) => {
               const Icon = item.icon;
@@ -110,9 +108,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right Controls: NRT Sync & Server Status */}
           <div className="flex items-center gap-3">
-            {/* Quick NRT Sync Button */}
             <button
               onClick={triggerNrtSync}
               disabled={isSyncing}
@@ -124,7 +120,6 @@ export default function Navbar() {
               <RefreshCw className={`w-3 h-3 text-emerald-400/80 ${isSyncing ? "animate-spin" : ""}`} />
             </button>
 
-            {/* Server Online Indicator */}
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/20 text-[11px] font-mono">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -149,7 +144,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Sync Toast Notification */}
       {syncToast && (
         <div className="bg-emerald-900/90 border-b border-emerald-400/50 py-1.5 px-4 text-center text-xs text-emerald-100 flex items-center justify-center gap-2 shadow-lg animate-fade-in">
           <Sparkles className="w-3.5 h-3.5 text-emerald-300" />

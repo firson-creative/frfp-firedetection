@@ -1,8 +1,3 @@
-/**
- * Data Resmi 38 Provinsi dan Kabupaten/Kota Republik Indonesia
- * Untuk Klasifikasi & Filter Wilayah FRFP (Fire Risk Foresight & Prioritization)
- */
-
 export interface IslandGroup {
   island: string;
   provinces: {
@@ -356,12 +351,10 @@ export const INDONESIA_ADMINISTRATIVE: IslandGroup[] = [
   }
 ];
 
-// Flat list of all 38 provinces
 export const ALL_PROVINCES: string[] = INDONESIA_ADMINISTRATIVE.flatMap((group) =>
   group.provinces.map((p) => p.name)
 );
 
-// Map of province name -> list of kabupaten
 export const PROVINCE_TO_KABUPATEN: Record<string, string[]> = INDONESIA_ADMINISTRATIVE.reduce(
   (acc, group) => {
     group.provinces.forEach((p) => {
@@ -372,14 +365,10 @@ export const PROVINCE_TO_KABUPATEN: Record<string, string[]> = INDONESIA_ADMINIS
   {} as Record<string, string[]>
 );
 
-// Flat list of all kabupaten across Indonesia
 export const ALL_KABUPATEN: string[] = Array.from(
   new Set(INDONESIA_ADMINISTRATIVE.flatMap((group) => group.provinces.flatMap((p) => p.kabupaten)))
 ).sort();
 
-/**
- * Normalisasi string untuk pencocokan toleran
- */
 export function normalizeRegion(str: string): string {
   return str
     .toLowerCase()
@@ -388,20 +377,15 @@ export function normalizeRegion(str: string): string {
     .trim();
 }
 
-/**
- * Mencari Kabupaten/Kota terdaftar berdasarkan nama provinsi
- */
 export function getKabupatenOptions(provinceName: string): string[] {
   if (!provinceName || provinceName === "ALL") {
     return [];
   }
 
-  // Exact match
   if (PROVINCE_TO_KABUPATEN[provinceName]) {
     return PROVINCE_TO_KABUPATEN[provinceName];
   }
 
-  // Tolerant match (misal "Provinsi Riau" -> "Riau", "Papua Selatan (Merauke)" -> "Papua Selatan")
   const normTarget = normalizeRegion(provinceName);
   for (const prov of ALL_PROVINCES) {
     const normProv = normalizeRegion(prov);

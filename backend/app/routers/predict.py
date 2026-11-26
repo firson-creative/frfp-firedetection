@@ -1,8 +1,3 @@
-"""
-backend/app/routers/predict.py
-Router Endpoint Prediksi FRFP Nasional (Single, Batch CSV, dan Near-Realtime Auto-Sync)
-"""
-
 import os
 import io
 import csv
@@ -28,7 +23,6 @@ router = APIRouter(prefix="/api/v1", tags=["Prediction"])
 
 @router.post("/reset-db")
 def reset_hotspots_database():
-    """Menghapus semua riwayat hotspot dari basis data SQLite."""
     try:
         clear_hotspots()
         return {"status": "SUCCESS", "message": "Basis data hotspot FRFP berhasil di-reset menjadi kosong."}
@@ -37,9 +31,6 @@ def reset_hotspots_database():
 
 @router.post("/predict", response_model=PredictionResponse)
 def predict_single_hotspot(input_data: HotspotInput):
-    """
-    Endpoint untuk menguji prediksi 1 titik panas satelit secara interaktif di seluruh Indonesia.
-    """
     result = model_service.predict_single(input_data.model_dump())
     record_id = insert_hotspot(result)
     result["id"] = record_id
@@ -51,12 +42,6 @@ def predict_batch_csv(
     replace_existing: bool = Query(False, description="Hapus data lama sebelum mengimpor batch baru"),
     max_stored_rows: int = Query(50000, description="Batas maksimum titik yang disimpan ke basis data untuk kestabilan peta")
 ):
-    """
-    Endpoint pemrosesan batch satelit NASA FIRMS VIIRS 375m berkinerja tinggi:
-    - Menggunakan chunked streaming (pd.read_csv) sehingga file raksasa (>700MB) tidak membebani memori.
-    - Inferensi ANN-MLP ter-vektorisasi (vectorized NumPy) sehingga ratusan ribu baris selesai dalam hitungan detik.
-    - Penyimpanan SQLite batch berkecepatan tinggi via executemany.
-    """
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Format file harus berupa CSV (.csv)")
 
@@ -75,14 +60,11 @@ def predict_batch_csv(
     required_cols = ['latitude', 'longitude', 'brightness', 'scan', 'track', 'frp', 'bright_t31']
 
     try:
-        # Stream file in chunks of 25,000 rows without loading entire file into memory
         chunks = pd.read_csv(file.file, chunksize=25000, low_memory=False)
 
         for chunk_idx, chunk in enumerate(chunks):
-            # Normalize column names to lowercase
             col_map = {str(c).strip().lower(): c for c in chunk.columns}
 
-            # Validasi kolom wajib pada chunk pertama
             if chunk_idx == 0:
                 missing = [r for r in required_cols if r not in col_map]
                 if missing:
@@ -91,7 +73,6 @@ def predict_batch_csv(
                         detail=f"Kolom wajib {missing} tidak ditemukan pada CSV. Kolom yang ada: {list(chunk.columns)}"
                     )
 
-            # Rename chunk columns to standard names
             std_rename = {col_map[r]: r for r in required_cols}
             if 'acq_date' in col_map:
                 std_rename[col_map['acq_date']] = 'acq_date'
@@ -102,7 +83,6 @@ def predict_batch_csv(
 
             chunk = chunk.rename(columns=std_rename)
 
-            # Coerce numeric columns and drop NaN rows
             for num_col in required_cols:
                 chunk[num_col] = pd.to_numeric(chunk[num_col], errors='coerce')
             chunk = chunk.dropna(subset=required_cols)
@@ -110,7 +90,6 @@ def predict_batch_csv(
             chunk_len = len(chunk)
             total_uploaded += chunk_len
 
-            # Vectorized filter for Indonesia Bounding Box: lat: -11.0 to 6.0, lon: 95.0 to 141.0
             indo_mask = (
                 (chunk['latitude'] >= -11.0) & (chunk['latitude'] <= 6.0) &
                 (chunk['longitude'] >= 95.0) & (chunk['longitude'] <= 141.0)
@@ -124,7 +103,6 @@ def predict_batch_csv(
             if indo_count == 0:
                 continue
 
-            # Vectorized ANN Model Inference
             X = indo_df[required_cols].values
             X_scaled = model_service.scaler.transform(X)
             probs = model_service.model.predict_proba(X_scaled)[:, 1]
@@ -135,7 +113,6 @@ def predict_batch_csv(
 
             delta_t_vals = indo_df['brightness'].values - indo_df['bright_t31'].values
 
-            # Convert to storage records up to max_stored_rows
             if len(to_insert_records) < max_stored_rows:
                 capacity_left = max_stored_rows - len(to_insert_records)
                 slice_df = indo_df.iloc[:capacity_left]
@@ -164,7 +141,6 @@ def predict_batch_csv(
                     lat_val = float(lats[i])
                     lon_val = float(lons[i])
 
-                    # FILTER PERMUKAAN LAUT: Abaikan titik di laut lepas (rig gas lepas pantai, flare, kapal)
                     if not is_point_on_indonesia_land(lat_val, lon_val):
                         continue
 
@@ -214,7 +190,6 @@ def predict_batch_csv(
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Gagal memproses file CSV: {str(err)}")
 
-    # Bulk insert into SQLite
     if to_insert_records:
         insert_batch_hotspots(to_insert_records)
 
@@ -232,17 +207,10 @@ def sync_near_realtime_hotspots(
     api_key: Optional[str] = Query(None, description="Opsional: NASA FIRMS MAP_KEY jika tersedia"),
     batch_size: int = Query(60, ge=10, le=300, description="Jumlah titik simulasi per sinkronisasi")
 ):
-    """
-    Endpoint Near-Realtime Auto-Sync:
-    1. Jika api_key diberikan dan valid: menarik data langsung dari NASA FIRMS API.
-    2. Jika tanpa api_key: melakukan simulasi pengambilan data stream satelit terbaru
-       dari dataset NRT lokal (fire_nrt_SV-C2_829694.csv) dengan penyesuaian waktu saat ini.
-    """
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     today_date = datetime.date.today().isoformat()
     now_time = datetime.datetime.now().strftime("%H%M")
 
-    # Opsi 1: Jika user memasukkan API Key dan koneksi internet tersedia
     if api_key and len(api_key.strip()) > 10:
         url = f"https://firms.modaps.eosdis.nasa.gov/api/country/csv/{api_key.strip()}/VIIRS_SNPP_NRT/IDN/1"
         try:
@@ -290,17 +258,15 @@ def sync_near_realtime_hotspots(
         except Exception as e:
             print(f"[WARN] Gagal menghubungi NASA Live API: {e}. Mengalihkan ke Smart Local Stream.")
 
-    # Opsi 2: Smart Local Stream dari file NRT lokal yang dimiliki pengguna
     simulated_records = []
     if os.path.exists(NRT_DATASET_PATH):
         import random
-        # Ambil sampel acak dari file NRT lokal
         with open(NRT_DATASET_PATH, 'r', encoding='utf-8', errors='ignore') as f:
             reader = csv.DictReader(f)
             field_map = {orig.strip().lower(): orig for orig in (reader.fieldnames or [])}
             all_rows = []
             for i, row in enumerate(reader):
-                if i >= 15000:  # Batasi pembacaan memori
+                if i >= 15000:
                     break
                 all_rows.append(row)
 
@@ -355,15 +321,6 @@ def load_sample_dataset(
     region: str = Query("kalimantan", description="Pilihan region: kalimantan, sulawesi, papua, nasional, riau"),
     replace_existing: bool = Query(True, description="Gantikan data lama di database")
 ):
-    """
-    Endpoint pemuatan instan dataset sampel ringan (<200KB) untuk pengujian cepat:
-    - kalimantan (1.500 baris)
-    - sulawesi (1.200 baris)
-    - papua (1.500 baris)
-    - nasional (2.500 baris)
-    - riau (4.843 baris)
-    """
-    # Root directory proyek FRFP
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     sample_files = {
         "kalimantan": os.path.join(root_dir, "data", "kalimantan_sample_test.csv"),
@@ -425,7 +382,6 @@ def load_sample_dataset(
         lat_val = float(lats[i])
         lon_val = float(lons[i])
 
-        # FILTER PERMUKAAN LAUT: Abaikan titik di laut lepas (rig gas lepas pantai, flare, kapal)
         if not is_point_on_indonesia_land(lat_val, lon_val):
             continue
 

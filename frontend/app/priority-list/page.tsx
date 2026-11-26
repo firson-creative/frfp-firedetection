@@ -31,7 +31,6 @@ export default function PriorityListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Dua pilihan dropdown berjenjang skala nasional
   const [selectedProvince, setSelectedProvince] = useState<string>("ALL");
   const [selectedKabupaten, setSelectedKabupaten] = useState<string>("ALL");
 
@@ -149,16 +148,13 @@ export default function PriorityListPage() {
     fetchHighRisk();
   }, []);
 
-  // Handler pergantian Provinsi (mereset pilihan Kabupaten ke ALL)
   const handleProvinceChange = (newProv: string) => {
     setSelectedProvince(newProv);
     setSelectedKabupaten("ALL");
   };
 
-  // Opsi Kabupaten / Kota dinamis berdasarkan provinsi terpilih
   const availableKabupatenList = useMemo(() => {
     if (selectedProvince === "ALL") {
-      // Jika semua provinsi, kumpulkan kabupaten yang ada di data saat ini
       const fromData = Array.from(
         new Set(
           hotspots
@@ -169,10 +165,8 @@ export default function PriorityListPage() {
       return fromData;
     }
 
-    // Ambil daftar kabupaten resmi dari database administratif
     const registered = getKabupatenOptions(selectedProvince);
 
-    // Kumpulkan juga subregion yang ada di data yang cocok dengan provinsi ini
     const normProv = normalizeRegion(selectedProvince);
     const fromHotspots = hotspots
       .filter((h) => {
@@ -186,14 +180,12 @@ export default function PriorityListPage() {
     return merged;
   }, [selectedProvince, hotspots]);
 
-  // Handler Reset Filter
   const handleResetFilters = () => {
     setSelectedProvince("ALL");
     setSelectedKabupaten("ALL");
     setSearch("");
   };
 
-  // Filtering Hotspots berdasarkan Search, Dropdown Provinsi, dan Dropdown Kabupaten
   const filtered = useMemo(() => {
     return hotspots.filter((item) => {
       const p = item.properties;
@@ -201,7 +193,6 @@ export default function PriorityListPage() {
       const subText = (p.subregion || "").toLowerCase();
       const searchLower = search.toLowerCase();
 
-      // Filter Pencarian Teks Bebas
       const matchSearch =
         !searchLower ||
         provText.includes(searchLower) ||
@@ -210,7 +201,6 @@ export default function PriorityListPage() {
         p.latitude.toString().includes(searchLower) ||
         p.longitude.toString().includes(searchLower);
 
-      // Filter Dropdown 1: Provinsi
       let matchProvince = true;
       if (selectedProvince !== "ALL") {
         const normSelected = normalizeRegion(selectedProvince);
@@ -219,7 +209,6 @@ export default function PriorityListPage() {
           subText.includes(normSelected);
       }
 
-      // Filter Dropdown 2: Kabupaten / Kota
       let matchKabupaten = true;
       if (selectedKabupaten !== "ALL") {
         const normSelectedKab = normalizeRegion(selectedKabupaten);
@@ -232,7 +221,6 @@ export default function PriorityListPage() {
     });
   }, [hotspots, search, selectedProvince, selectedKabupaten]);
 
-  // Statistik Ringkas Wilayah Terpilih
   const avgFrp = useMemo(() => {
     if (filtered.length === 0) return 0;
     const total = filtered.reduce((acc, h) => acc + (h.properties.frp || 0), 0);
@@ -297,9 +285,6 @@ export default function PriorityListPage() {
 
   return (
     <div className="space-y-6">
-      {/* ========================================================
-          HEADER RESMI CETAK (HANYA MUNCUL SAAT CETAK / PDF)
-          ======================================================== */}
       <div className="hidden print:block border-b-2 border-black pb-4 mb-4 text-black">
         <div className="text-center">
           <div className="text-[10px] uppercase font-bold tracking-widest text-gray-800">
@@ -332,9 +317,6 @@ export default function PriorityListPage() {
         </div>
       </div>
 
-      {/* ========================================================
-          HEADER LAYAR & TOMBOL AKSI UTAMA (SCREEN ONLY)
-          ======================================================== */}
       <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -374,11 +356,7 @@ export default function PriorityListPage() {
         </div>
       </div>
 
-      {/* ========================================================
-          BAR FILTER NASIONAL DUA TINGKAT: PROVINSI & KABUPATEN
-          ======================================================== */}
       <div className="liquid-glass p-4 rounded-xl flex flex-col lg:flex-row gap-3 print:hidden text-xs">
-        {/* Input Pencarian Bebas */}
         <div className="relative flex-1 min-w-[220px]">
           <Search className="w-4 h-4 text-emerald-400 absolute left-3 top-2.5" />
           <input
@@ -390,7 +368,6 @@ export default function PriorityListPage() {
           />
         </div>
 
-        {/* DROPDOWN 1: Berdasarkan Provinsi (38 Provinsi Indonesia) */}
         <div className="flex items-center gap-2 min-w-[240px]">
           <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <select
@@ -413,7 +390,6 @@ export default function PriorityListPage() {
           </select>
         </div>
 
-        {/* DROPDOWN 2: Pilihan Kabupaten / Kota (Cascading dari Provinsi) */}
         <div className="flex items-center gap-2 min-w-[240px]">
           <Compass className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <select
@@ -434,7 +410,6 @@ export default function PriorityListPage() {
           </select>
         </div>
 
-        {/* Tombol Reset Filter */}
         {(selectedProvince !== "ALL" || selectedKabupaten !== "ALL" || search !== "") && (
           <button
             onClick={handleResetFilters}
@@ -447,9 +422,6 @@ export default function PriorityListPage() {
         )}
       </div>
 
-      {/* ========================================================
-          BANNER INFORMASI WILAYAH AKTIF (SCREEN ONLY)
-          ======================================================== */}
       <div className="liquid-glass-card p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-gray-300">Menampilkan:</span>
@@ -474,9 +446,6 @@ export default function PriorityListPage() {
         </div>
       </div>
 
-      {/* ========================================================
-          TABEL PRIORITAS TUGAS AUDIT GAKKUM & MANGGALA AGNI
-          ======================================================== */}
       <div className="liquid-glass rounded-2xl border border-emerald-500/25 overflow-hidden shadow-glass print:border-black print:bg-white print:text-black">
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs text-left">
@@ -522,12 +491,10 @@ export default function PriorityListPage() {
                       key={p.id || index}
                       className="hover:bg-emerald-950/30 transition print:hover:bg-transparent"
                     >
-                      {/* Nomor Urut */}
                       <td className="p-3 font-mono font-bold text-center text-emerald-400 print:text-black">
                         #{index + 1}
                       </td>
 
-                      {/* Wilayah Administratif (Kabupaten & Provinsi) */}
                       <td className="p-3">
                         <div className="font-bold text-gray-100 print:text-black text-xs flex items-center gap-1.5">
                           <Building2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 print:hidden" />
@@ -538,7 +505,6 @@ export default function PriorityListPage() {
                         </div>
                       </td>
 
-                      {/* Koordinat */}
                       <td className="p-3 font-mono">
                         <div className="text-gray-200 font-semibold print:text-black">
                           {Number(p.latitude).toFixed(4)}, {Number(p.longitude).toFixed(4)}
@@ -548,7 +514,6 @@ export default function PriorityListPage() {
                         </div>
                       </td>
 
-                      {/* Waktu Satelit */}
                       <td className="p-3">
                         <div className="font-mono text-emerald-200 print:text-black">
                           {p.local_time_str || "Waktu Satelit"}
@@ -558,30 +523,25 @@ export default function PriorityListPage() {
                         </div>
                       </td>
 
-                      {/* FRP & Suhu */}
                       <td className="p-3 font-mono">
                         <div className="text-amber-300 font-bold print:text-black">{p.frp} MW</div>
                         <div className="text-[10px] text-gray-400 print:text-gray-600">{p.brightness} K</div>
                       </td>
 
-                      {/* Delta T */}
                       <td className="p-3 font-mono text-emerald-300 font-bold print:text-black">
                         {p.delta_t} K
                       </td>
 
-                      {/* Probabilitas */}
                       <td className="p-3 font-mono text-gray-300 print:text-black">
                         {(Number(p.probability) * 100).toFixed(1)}%
                       </td>
 
-                      {/* Tingkat Prioritas */}
                       <td className="p-3">
                         <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-500/20 text-red-400 border border-red-500/40 print:border print:border-black print:text-black">
                           {p.audit_priority || "Sangat Tinggi (P1)"}
                         </span>
                       </td>
 
-                      {/* Rekomendasi Operasional Satgas */}
                       <td className="p-3 text-gray-300 print:text-black max-w-xs leading-relaxed text-[11px]">
                         {p.recommendation || "Prioritas verifikasi patroli darurat dan berita acara kepatuhan."}
                       </td>
@@ -594,9 +554,6 @@ export default function PriorityListPage() {
         </div>
       </div>
 
-      {/* ========================================================
-          BAGIAN TANDA TANGAN RESMI CETAK (HANYA MUNCUL SAAT CETAK)
-          ======================================================== */}
       <div className="hidden print:block mt-8 text-black text-xs">
         <div className="flex justify-between items-start px-6 pt-4 border-t border-black">
           <div className="text-center w-72">

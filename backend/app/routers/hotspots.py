@@ -1,8 +1,3 @@
-"""
-backend/app/routers/hotspots.py
-Router GeoJSON Hotspots FRFP Skala Nasional & Statistik
-"""
-
 from typing import Optional
 from fastapi import APIRouter, Query
 from ..schemas import GeoJSONFeatureCollection, GeoJSONFeature, GeoJSONGeometry
@@ -17,10 +12,6 @@ def get_hotspots_geojson(
     kabupaten: Optional[str] = Query(None, description="Filter nama kabupaten / kota di Indonesia"),
     limit: int = Query(1000, ge=1, le=5000, description="Maksimum jumlah titik hotspot yang diambil")
 ):
-    """
-    Endpoint penyedia data format GeoJSON FeatureCollection untuk dirender
-    langsung oleh komponen peta Leaflet pada dashboard FRFP.
-    """
     rows = get_hotspots(risk_class=risk_class, province=province, kabupaten=kabupaten, limit=limit)
     features = []
 
@@ -29,7 +20,7 @@ def get_hotspots_geojson(
             type="Feature",
             geometry=GeoJSONGeometry(
                 type="Point",
-                coordinates=[r["longitude"], r["latitude"]]  # GeoJSON: [lon, lat]
+                coordinates=[r["longitude"], r["latitude"]]
             ),
             properties={
                 "id": r["id"],
@@ -59,7 +50,4 @@ def get_hotspots_geojson(
 
 @router.get("/stats")
 def get_system_stats():
-    """
-    Endpoint statistik ringkasan total hotspot dan prioritas audit di seluruh Indonesia.
-    """
     return get_statistics()

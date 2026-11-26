@@ -1,11 +1,5 @@
-"""
-backend/app/config.py
-Konfigurasi Nasional FRFP - Fire Risk Foresight & Prioritization
-"""
-
 import os
 
-# Koordinat Bounding Box Resmi Indonesia (Sabang s.d. Merauke)
 INDONESIA_BOUNDING_BOX = {
     "lat_min": -11.00,
     "lat_max": 6.00,
@@ -13,7 +7,6 @@ INDONESIA_BOUNDING_BOX = {
     "lon_max": 141.00
 }
 
-# Koordinat Center Default (Pusat Kepulauan Indonesia) untuk Peta Leaflet
 INDONESIA_DEFAULT_CENTER = {
     "latitude": -0.7893,
     "longitude": 113.9213,
@@ -28,7 +21,6 @@ SCALER_PATH = os.path.join(MODEL_DIR, "scaler_riau.pkl")
 
 DATABASE_PATH = os.path.join(BASE_DIR, "frfp_hotspots.db")
 
-# Path ke file NRT lokal untuk simulator Near-Realtime
 NRT_DATASET_PATH = os.path.join(os.path.dirname(BASE_DIR), "data", "fire_nrt_SV-C2_829694.csv")
 
 CORS_ORIGINS = [
