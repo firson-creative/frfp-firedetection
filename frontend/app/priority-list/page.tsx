@@ -5,25 +5,21 @@ import axios from "axios";
 import { API_BASE_URL } from "@/lib/api";
 import {
   INDONESIA_ADMINISTRATIVE,
-  ALL_PROVINCES,
   getKabupatenOptions,
   normalizeRegion,
 } from "@/lib/indonesia-regions";
 import {
   FileText,
   Printer,
-  ShieldAlert,
-  CheckCircle,
   Search,
   Download,
-  Calendar,
-  Clock,
   MapPin,
   Compass,
   RotateCcw,
   Flame,
-  AlertTriangle,
   Building2,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export default function PriorityListPage() {
@@ -284,104 +280,110 @@ export default function PriorityListPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="hidden print:block border-b-2 border-black pb-4 mb-4 text-black">
-        <div className="text-center">
-          <div className="text-[10px] uppercase font-bold tracking-widest text-gray-800">
-            KEMENTERIAN LINGKUNGAN HIDUP DAN KEHUTANAN REPUBLIK INDONESIA
+    <div className="w-full space-y-4">
+      <div className="hidden print:block mb-4 text-black">
+        <div className="flex items-center gap-4 border-b-[3px] border-double border-black pb-3">
+          <img
+            src="/logo.png"
+            alt="Logo FRFP"
+            className="w-14 h-14 object-contain flex-shrink-0"
+          />
+          <div className="flex-1 text-center pr-14">
+            <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-black">
+              KEMENTERIAN LINGKUNGAN HIDUP DAN KEHUTANAN REPUBLIK INDONESIA
+            </div>
+            <h1 className="font-sans text-base font-extrabold uppercase tracking-wide mt-0.5 text-black">
+              SURAT PERINTAH TUGAS GROUND CHECK &amp; AUDIT KEPATUHAN LINGKUNGAN
+            </h1>
+            <div className="text-[11px] font-bold uppercase text-black mt-0.5">
+              KOMANDO NASIONAL SATUAN TUGAS PENGENDALIAN KARHUTLA &amp; BALAI PENEGAKAN HUKUM (GAKKUM) KLHK
+            </div>
+            <p className="text-[10px] text-black mt-0.5">
+              Berdasarkan Hasil Klasifikasi Risiko Citra Satelit NASA FIRMS VIIRS 375m Berbasis Jaringan Syaraf Tiruan (ANN-MLP)
+            </p>
           </div>
-          <h1 className="text-lg font-black uppercase tracking-wider mt-1">
-            SURAT PERINTAH TUGAS GROUND CHECK & AUDIT KEPATUHAN LINGKUNGAN
-          </h1>
-          <h2 className="text-xs font-bold mt-0.5">
-            KOMANDO NASIONAL SATUAN TUGAS PENGENDALIAN KARHUTLA & BALAI PENEGAKAN HUKUM (GAKKUM) KLHK
-          </h2>
-          <p className="text-[10px] text-gray-700 mt-1">
-            Berdasarkan Hasil Klasifikasi Risiko Citra Satelit NASA FIRMS VIIRS 375m Berbasis Jaringan Syaraf Tiruan (ANN-MLP v2.0)
-          </p>
+        </div>
 
-          <div className="text-[10px] font-semibold text-gray-900 mt-3 border-y border-dashed border-gray-400 py-1.5 flex justify-around">
-            <span>
-              <strong>Provinsi:</strong> {selectedProvince === "ALL" ? "Seluruh Teritori Indonesia (Nasional)" : selectedProvince}
-            </span>
-            <span>
-              <strong>Kabupaten/Kota:</strong> {selectedKabupaten === "ALL" ? "Semua Kabupaten / Kota" : selectedKabupaten}
-            </span>
-            <span>
-              <strong>Target Prioritas:</strong> {filtered.length} Titik Kritis (HIGH RISK)
-            </span>
-            <span>
-              <strong>Tanggal Terbit:</strong> {new Date().toLocaleDateString("id-ID", { dateStyle: "full" })}
-            </span>
+        <div className="grid grid-cols-4 border border-black mt-3 text-[10px] divide-x divide-black">
+          <div className="px-2.5 py-1.5">
+            <span className="block text-[9px] uppercase text-gray-600 font-semibold">Provinsi</span>
+            <strong className="text-black">
+              {selectedProvince === "ALL" ? "Seluruh Teritori Indonesia" : selectedProvince}
+            </strong>
+          </div>
+          <div className="px-2.5 py-1.5">
+            <span className="block text-[9px] uppercase text-gray-600 font-semibold">Kabupaten / Kota</span>
+            <strong className="text-black">
+              {selectedKabupaten === "ALL" ? "Semua Kabupaten / Kota" : selectedKabupaten}
+            </strong>
+          </div>
+          <div className="px-2.5 py-1.5">
+            <span className="block text-[9px] uppercase text-gray-600 font-semibold">Target Prioritas</span>
+            <strong className="text-black">{filtered.length} Titik Kritis (HIGH RISK)</strong>
+          </div>
+          <div className="px-2.5 py-1.5">
+            <span className="block text-[9px] uppercase text-gray-600 font-semibold">Tanggal Terbit</span>
+            <strong className="text-black">
+              {new Date().toLocaleDateString("id-ID", { dateStyle: "long" })}
+            </strong>
           </div>
         </div>
       </div>
 
-      <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800 print:hidden">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              Skala Nasional: Sabang s.d. Merauke
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 flex items-center gap-1">
-              <ShieldAlert className="w-3 h-3" /> Filter Khusus HIGH RISK (P1)
-            </span>
+          <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+            Filter Khusus HIGH RISK (P1) &bull; Sabang s.d. Merauke
           </div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FileText className="w-6 h-6 text-emerald-400" /> Lembar Prioritas Tugas Satgas & Audit Gakkum
+          <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-950 dark:text-white flex items-center gap-2 mt-0.5">
+            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Lembar Prioritas Tugas Satgas &amp; Audit Gakkum
           </h1>
-          <p className="text-xs text-emerald-100/70 mt-1 max-w-2xl leading-relaxed">
-            Daftar titik panas kategori <strong>HIGH RISK</strong> di 38 Provinsi Indonesia yang memerlukan verifikasi
-            fisik darurat oleh Regu Pemadam Manggala Agni dan audit kepatuhan konsesi oleh Balai Penegakan Hukum KLHK.
-          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportCSV}
             disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-500/30 text-xs font-semibold rounded-xl transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Unduh data tabel dalam format CSV spreadsheet"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 text-xs font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4 text-emerald-400" /> Unduh CSV
+            <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Unduh CSV
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-glass-emerald transition active:scale-95"
-            title="Cetak atau simpan sebagai PDF Surat Perintah Tugas Resmi"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
           >
-            <Printer className="w-4 h-4" /> Cetak Surat Tugas Resmi
+            <Printer className="w-3.5 h-3.5" /> Cetak Surat Tugas
           </button>
         </div>
       </div>
 
-      <div className="liquid-glass p-4 rounded-xl flex flex-col lg:flex-row gap-3 print:hidden text-xs">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 text-emerald-400 absolute left-3 top-2.5" />
+      <div className="flex flex-col lg:flex-row gap-2.5 print:hidden text-xs">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="w-4 h-4 text-emerald-600 dark:text-emerald-400 absolute left-3 top-2" />
           <input
             type="text"
             placeholder="Cari provinsi, kabupaten, rekomendasi, atau koordinat..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full liquid-glass-input rounded-lg pl-9 pr-4 py-2 text-xs"
+            className="w-full surface-input rounded-lg pl-9 pr-4 py-1.5 text-xs"
           />
         </div>
 
-        <div className="flex items-center gap-2 min-w-[240px]">
-          <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 min-w-[220px]">
+          <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
           <select
             value={selectedProvince}
             onChange={(e) => handleProvinceChange(e.target.value)}
-            className="w-full liquid-glass-input rounded-lg px-3 py-2 text-xs font-medium cursor-pointer"
+            className="w-full surface-input rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer"
           >
-            <option value="ALL" className="bg-brand-forest">
-              🌐 Semua Provinsi ({hotspots.length} Titik)
+            <option value="ALL" className="bg-white dark:bg-zinc-950">
+              Semua Provinsi ({hotspots.length} Titik)
             </option>
             {INDONESIA_ADMINISTRATIVE.map((island) => (
-              <optgroup key={island.island} label={`Pulau ${island.island}`} className="bg-brand-darkForest text-emerald-300 font-bold">
+              <optgroup key={island.island} label={`Pulau ${island.island}`} className="bg-white dark:bg-zinc-950 font-bold">
                 {island.provinces.map((prov) => (
-                  <option key={prov.name} value={prov.name} className="bg-brand-forest text-white font-normal">
+                  <option key={prov.name} value={prov.name} className="bg-white dark:bg-zinc-950 font-normal">
                     Provinsi {prov.name}
                   </option>
                 ))}
@@ -390,20 +392,20 @@ export default function PriorityListPage() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 min-w-[240px]">
-          <Compass className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 min-w-[220px]">
+          <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
           <select
             value={selectedKabupaten}
             onChange={(e) => setSelectedKabupaten(e.target.value)}
-            className="w-full liquid-glass-input rounded-lg px-3 py-2 text-xs font-medium cursor-pointer"
+            className="w-full surface-input rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer"
           >
-            <option value="ALL" className="bg-brand-forest">
+            <option value="ALL" className="bg-white dark:bg-zinc-950">
               {selectedProvince === "ALL"
-                ? "🏛️ Semua Kabupaten / Kota"
-                : `🏛️ Semua Kabupaten di ${selectedProvince}`}
+                ? "Semua Kabupaten / Kota"
+                : `Semua Kabupaten di ${selectedProvince}`}
             </option>
             {availableKabupatenList.map((kab, i) => (
-              <option key={i} value={kab} className="bg-brand-forest text-white">
+              <option key={i} value={kab} className="bg-white dark:bg-zinc-950">
                 {kab}
               </option>
             ))}
@@ -413,8 +415,7 @@ export default function PriorityListPage() {
         {(selectedProvince !== "ALL" || selectedKabupaten !== "ALL" || search !== "") && (
           <button
             onClick={handleResetFilters}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 transition active:scale-95 flex-shrink-0"
-            title="Reset semua filter ke default seluruh Indonesia"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 transition flex-shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
@@ -422,59 +423,50 @@ export default function PriorityListPage() {
         )}
       </div>
 
-      <div className="liquid-glass-card p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-600 dark:text-zinc-400 print:hidden">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-gray-300">Menampilkan:</span>
-          <span className="font-bold text-white px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40">
-            {filtered.length} Titik Kritis
-          </span>
-          <span className="text-gray-400">•</span>
-          <span className="text-emerald-300 font-medium">
-            Provinsi: <strong className="text-white">{selectedProvince === "ALL" ? "Seluruh Indonesia" : selectedProvince}</strong>
-          </span>
-          <span className="text-gray-400">•</span>
-          <span className="text-emerald-300 font-medium">
-            Kabupaten/Kota: <strong className="text-white">{selectedKabupaten === "ALL" ? "Semua Wilayah" : selectedKabupaten}</strong>
-          </span>
+          <span className="font-bold text-zinc-950 dark:text-white">{filtered.length} Titik Kritis</span>
+          <span>&bull;</span>
+          <span>Provinsi: <strong className="text-zinc-900 dark:text-zinc-200">{selectedProvince === "ALL" ? "Seluruh Indonesia" : selectedProvince}</strong></span>
+          <span>&bull;</span>
+          <span>Kabupaten/Kota: <strong className="text-zinc-900 dark:text-zinc-200">{selectedKabupaten === "ALL" ? "Semua Wilayah" : selectedKabupaten}</strong></span>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px] text-gray-300">
-          <span className="flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
-            Rata-rata FRP: <strong className="text-amber-300 font-mono">{avgFrp} MW</strong>
-          </span>
-        </div>
+        <span className="flex items-center gap-1.5 text-[11px]">
+          <Flame className="w-3.5 h-3.5 text-amber-500" />
+          Rata-rata FRP: <strong className="text-amber-600 dark:text-amber-400 font-mono">{avgFrp} MW</strong>
+        </span>
       </div>
 
-      <div className="liquid-glass rounded-2xl border border-emerald-500/25 overflow-hidden shadow-glass print:border-black print:bg-white print:text-black">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs text-left">
-            <thead className="bg-black/60 text-emerald-300 font-semibold border-b border-emerald-500/25 print:bg-gray-100 print:text-black print:border-b-2 print:border-black">
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden print:border-0 print:rounded-none print:overflow-visible print:bg-white print:text-black">
+        <div className="overflow-x-auto print:overflow-visible">
+          <table className="min-w-full text-xs text-left print-doc-table print:text-[10px]">
+            <thead className="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 font-semibold border-b border-zinc-200 dark:border-zinc-800 print:bg-zinc-100 print:text-black">
               <tr>
-                <th className="p-3 text-center w-12">No</th>
-                <th className="p-3">Wilayah Administratif</th>
-                <th className="p-3">Koordinat (Lat, Lon)</th>
-                <th className="p-3">Waktu Rekam Satelit</th>
-                <th className="p-3">FRP / Suhu I-4</th>
-                <th className="p-3">&Delta;T (Delta)</th>
-                <th className="p-3">Probabilitas</th>
-                <th className="p-3">Tingkat Prioritas</th>
-                <th className="p-3">Rekomendasi Operasional Satgas</th>
+                <th className="p-2.5 text-center w-10 print:px-1.5 print:py-1.5 print:whitespace-nowrap">No</th>
+                <th className="p-2.5 print:px-2 print:py-1.5">Wilayah Administratif</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">Koordinat</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">Waktu Rekam</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">FRP / Suhu</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">&Delta;T</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">Prob.</th>
+                <th className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">Prioritas</th>
+                <th className="p-2.5 print:px-2 print:py-1.5">Rekomendasi Operasional Satgas</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-emerald-500/10 print:divide-gray-300">
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 bg-white dark:bg-black print:bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-emerald-300">
+                  <td colSpan={9} className="p-8 text-center text-emerald-700 dark:text-emerald-400 print:text-black">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent rounded-full animate-spin" />
                       <span>Memuat data antrean audit satgas nasional...</span>
                     </div>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-gray-400">
+                  <td colSpan={9} className="p-8 text-center text-zinc-500 dark:text-zinc-400 print:text-black">
                     Tidak ditemukan titik prioritas <strong>HIGH RISK</strong> pada wilayah{" "}
                     {selectedProvince !== "ALL" ? `Provinsi ${selectedProvince}` : "yang dipilih"}{" "}
                     {selectedKabupaten !== "ALL" ? `(Kabupaten ${selectedKabupaten})` : ""}.
@@ -489,60 +481,65 @@ export default function PriorityListPage() {
                   return (
                     <tr
                       key={p.id || index}
-                      className="hover:bg-emerald-950/30 transition print:hover:bg-transparent"
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-900 transition print:hover:bg-transparent"
                     >
-                      <td className="p-3 font-mono font-bold text-center text-emerald-400 print:text-black">
-                        #{index + 1}
+                      <td className="p-2.5 font-mono font-bold text-center text-emerald-700 dark:text-emerald-400 print:text-black print:px-1.5 print:py-1.5 print:whitespace-nowrap">
+                        {index + 1}
                       </td>
 
-                      <td className="p-3">
-                        <div className="font-bold text-gray-100 print:text-black text-xs flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 print:hidden" />
+                      <td className="p-2.5 print:px-2 print:py-1.5">
+                        <div className="font-bold text-zinc-950 dark:text-zinc-100 print:text-black text-xs print:text-[10px] flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 print:hidden" />
                           <span>{displaySubregion}</span>
                         </div>
-                        <div className="text-[10px] text-emerald-300/80 print:text-gray-700 mt-0.5">
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 print:text-black mt-0.5 print:mt-0">
                           {displayProvince}
                         </div>
                       </td>
 
-                      <td className="p-3 font-mono">
-                        <div className="text-gray-200 font-semibold print:text-black">
+                      <td className="p-2.5 font-mono print:px-2 print:py-1.5 print:whitespace-nowrap">
+                        <div className="text-zinc-900 dark:text-zinc-200 font-semibold print:text-black">
                           {Number(p.latitude).toFixed(4)}, {Number(p.longitude).toFixed(4)}
                         </div>
-                        <div className="text-[10px] text-gray-400 print:text-gray-600">
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 print:text-black">
                           VIIRS 375m
                         </div>
                       </td>
 
-                      <td className="p-3">
-                        <div className="font-mono text-emerald-200 print:text-black">
+                      <td className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">
+                        <div className="font-mono text-zinc-800 dark:text-zinc-200 print:text-black">
                           {p.local_time_str || "Waktu Satelit"}
                         </div>
-                        <div className="text-[10px] text-gray-400 print:text-gray-600">
-                          {p.acq_date || "-"} • {p.daynight === "N" ? "🌙 Malam" : "☀️ Siang"}
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 print:hidden flex items-center gap-1">
+                          <span>{p.acq_date || "-"} &bull;</span>
+                          {p.daynight === "N" ? (
+                            <span className="inline-flex items-center gap-0.5"><Moon className="w-3 h-3" /> Malam</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5"><Sun className="w-3 h-3" /> Siang</span>
+                          )}
                         </div>
                       </td>
 
-                      <td className="p-3 font-mono">
-                        <div className="text-amber-300 font-bold print:text-black">{p.frp} MW</div>
-                        <div className="text-[10px] text-gray-400 print:text-gray-600">{p.brightness} K</div>
+                      <td className="p-2.5 font-mono print:px-2 print:py-1.5 print:whitespace-nowrap">
+                        <div className="text-amber-600 dark:text-amber-400 font-bold print:text-black">{p.frp} MW</div>
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 print:text-black">{p.brightness} K</div>
                       </td>
 
-                      <td className="p-3 font-mono text-emerald-300 font-bold print:text-black">
+                      <td className="p-2.5 font-mono text-emerald-700 dark:text-emerald-400 font-bold print:text-black print:px-2 print:py-1.5 print:whitespace-nowrap">
                         {p.delta_t} K
                       </td>
 
-                      <td className="p-3 font-mono text-gray-300 print:text-black">
+                      <td className="p-2.5 font-mono text-zinc-700 dark:text-zinc-300 print:text-black print:px-2 print:py-1.5 print:whitespace-nowrap">
                         {(Number(p.probability) * 100).toFixed(1)}%
                       </td>
 
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-500/20 text-red-400 border border-red-500/40 print:border print:border-black print:text-black">
+                      <td className="p-2.5 print:px-2 print:py-1.5 print:whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 print:border-0 print:bg-transparent print:p-0 print:text-black">
                           {p.audit_priority || "Sangat Tinggi (P1)"}
                         </span>
                       </td>
 
-                      <td className="p-3 text-gray-300 print:text-black max-w-xs leading-relaxed text-[11px]">
+                      <td className="p-2.5 text-zinc-700 dark:text-zinc-300 print:text-black max-w-xs print:max-w-none leading-relaxed print:leading-snug text-[11px] print:text-[10px] print:px-2 print:py-1.5">
                         {p.recommendation || "Prioritas verifikasi patroli darurat dan berita acara kepatuhan."}
                       </td>
                     </tr>
@@ -554,8 +551,8 @@ export default function PriorityListPage() {
         </div>
       </div>
 
-      <div className="hidden print:block mt-8 text-black text-xs">
-        <div className="flex justify-between items-start px-6 pt-4 border-t border-black">
+      <div className="hidden print:block mt-6 text-black text-[11px] break-inside-avoid">
+        <div className="flex justify-between items-start px-8 pt-4">
           <div className="text-center w-72">
             <p>Mengetahui,</p>
             <p className="font-bold mt-0.5">
@@ -564,17 +561,17 @@ export default function PriorityListPage() {
             </p>
             <div className="h-16" />
             <p className="font-bold underline">( ..................................................... )</p>
-            <p className="text-[10px]">NIP / NRP Satgas Pengendalian Karhutla</p>
+            <p className="text-[10px] mt-0.5">NIP / NRP Satgas Pengendalian Karhutla</p>
           </div>
 
           <div className="text-center w-80">
-            <p>Ditetapkan di Jakarta, {new Date().toLocaleDateString("id-ID")}</p>
+            <p>Ditetapkan di Jakarta, {new Date().toLocaleDateString("id-ID", { dateStyle: "long" })}</p>
             <p className="font-bold mt-0.5">
               Pejabat Pengawas Lingkungan Hidup (PPLH) / Penyidik Gakkum KLHK
             </p>
             <div className="h-16" />
             <p className="font-bold underline">( ..................................................... )</p>
-            <p className="text-[10px]">Penyidik Pegawai Negeri Sipil (PPNS) Lingkungan Hidup</p>
+            <p className="text-[10px] mt-0.5">Penyidik Pegawai Negeri Sipil (PPNS) Lingkungan Hidup</p>
           </div>
         </div>
       </div>

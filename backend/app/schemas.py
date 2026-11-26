@@ -82,15 +82,6 @@ class BatchPredictionResponse(BaseModel):
     low_risk_count: int
     records: List[PredictionResponse]
 
-class SyncNRTResponse(BaseModel):
-    status: str
-    message: str
-    added_count: int
-    high_risk_count: int
-    low_risk_count: int
-    source: str
-    timestamp: str
-
 class GeoJSONGeometry(BaseModel):
     type: str = "Point"
     coordinates: List[float]

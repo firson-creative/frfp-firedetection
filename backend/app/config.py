@@ -21,8 +21,6 @@ SCALER_PATH = os.path.join(MODEL_DIR, "scaler_riau.pkl")
 
 DATABASE_PATH = os.path.join(BASE_DIR, "frfp_hotspots.db")
 
-NRT_DATASET_PATH = os.path.join(os.path.dirname(BASE_DIR), "data", "fire_nrt_SV-C2_829694.csv")
-
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",

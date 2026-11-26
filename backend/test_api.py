@@ -25,11 +25,6 @@ def test_endpoints():
         print(f"[PASS] POST /api/v1/predict ({data['province_region']}): {data['risk_class']} | {data['local_time_str']}")
         assert data["is_indonesia"] is True
 
-        res_sync = client.post("/api/v1/sync-nrt?batch_size=20")
-        assert res_sync.status_code == 200, res_sync.text
-        sync_data = res_sync.json()
-        print(f"[PASS] POST /api/v1/sync-nrt: {sync_data['message']} (Added: {sync_data['added_count']})")
-
         res_geo = client.get("/api/v1/hotspots?limit=10")
         assert res_geo.status_code == 200
         geo = res_geo.json()

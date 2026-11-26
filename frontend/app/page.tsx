@@ -4,27 +4,22 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { API_BASE_URL } from "@/lib/api";
+import WelcomeSplash from "@/components/WelcomeSplash";
 import {
   Flame,
   AlertTriangle,
-  ShieldCheck,
-  FileSpreadsheet,
   RefreshCw,
-  Layers,
-  Radio,
-  Sparkles,
+  UploadCloud,
   MapPin,
-  Clock,
-  Compass,
 } from "lucide-react";
 import Link from "next/link";
 
 const IndonesiaMap = dynamic(() => import("@/components/IndonesiaMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[620px] bg-brand-darkForest flex items-center justify-center text-emerald-300 rounded-2xl border border-emerald-500/20">
+    <div className="w-full h-[calc(100vh-230px)] min-h-[500px] bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center text-emerald-700 dark:text-emerald-400 rounded-xl border border-zinc-200 dark:border-zinc-800">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-9 h-9 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+        <div className="w-9 h-9 border-4 border-emerald-600 dark:border-emerald-400 border-t-transparent rounded-full animate-spin" />
         <span className="text-sm font-medium">Memuat Peta Spasial Nusantara (Sabang - Merauke)...</span>
       </div>
     </div>
@@ -42,10 +37,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRisk, setSelectedRisk] = useState<string>("ALL");
   const [backendError, setBackendError] = useState<boolean>(false);
-
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
-  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
   const fallbackHotspots = [
     {
@@ -204,205 +195,144 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleSyncNRT = async () => {
-    setIsSyncing(true);
-    setSyncFeedback(null);
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/v1/sync-nrt`);
-      setSyncFeedback(
-        `Sukses: Ditambahkan ${res.data.added_count} titik baru (${res.data.high_risk_count} High Risk) via ${res.data.source}.`
-      );
-      await fetchData();
-    } catch (err: any) {
-      setSyncFeedback("Gagal sinkronisasi NRT satelit.");
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncFeedback(null), 6000);
-    }
-  };
-
-  useEffect(() => {
-    if (!autoSyncEnabled) return;
-    const interval = setInterval(() => {
-      handleSyncNRT();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [autoSyncEnabled]);
-
   return (
-    <div className="space-y-6">
-      <div className="liquid-glass p-6 rounded-2xl border border-emerald-500/25 relative overflow-hidden">
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="space-y-4">
+      <WelcomeSplash />
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative z-10">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                <Compass className="w-3.5 h-3.5 text-emerald-400" /> Skala Nasional (Sabang s.d. Merauke)
-              </span>
-              <span className="text-xs text-emerald-100/70 font-mono">
-                38 Provinsi • Koordinat: -11.0° s.d. 6.0° LU/LS | 95.0° s.d. 141.0° BT
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-2 tracking-tight">
-              FRFP — Fire Risk Foresight & Prioritization
-            </h1>
-            <p className="text-sm text-emerald-100/80 mt-1 max-w-3xl leading-relaxed">
-              Platform kecerdasan buatan berbasis <strong>Jaringan Syaraf Tiruan (ANN-MLP)</strong> untuk deteksi dini,
-              prakiraan risiko, dan prioritas inspeksi karhutla citra satelit <strong>NASA FIRMS VIIRS (375m)</strong> secara near-realtime.
-            </p>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+        <div>
+          <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+            Sabang s.d. Merauke &bull; 38 Provinsi &bull; Dataset Satelit VIIRS 375m &amp; Input Manual
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/40 border border-emerald-500/20 text-xs">
-              <Radio className={`w-3.5 h-3.5 ${autoSyncEnabled ? "text-emerald-400 animate-pulse" : "text-gray-500"}`} />
-              <span className="text-gray-300 font-medium">Live NRT Feed:</span>
-              <button
-                onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
-                className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
-                  autoSyncEnabled
-                    ? "bg-emerald-500 text-black shadow-[0_0_8px_#10B981]"
-                    : "bg-gray-800 text-gray-400 hover:text-white"
-                }`}
-              >
-                {autoSyncEnabled ? "AKTIF (30s)" : "NONAKTIF"}
-              </button>
-            </div>
-
-            <button
-              onClick={handleSyncNRT}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-glass-emerald transition active:scale-95 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Menyinkronkan..." : "Sync NRT Satelit"}
-            </button>
-
-            <Link
-              href="/predict"
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-extrabold rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition active:scale-95"
-            >
-              <Flame className="w-3.5 h-3.5" /> Uji Prediksi
-            </Link>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-950 dark:text-white tracking-tight mt-0.5">
+            Pantauan Risiko Kebakaran Hutan &amp; Lahan
+          </h1>
         </div>
 
-        {syncFeedback && (
-          <div className="mt-4 p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-400/50 text-emerald-200 text-xs flex items-center gap-2 animate-fade-in">
-            <Sparkles className="w-4 h-4 text-emerald-300 flex-shrink-0" />
-            <span>{syncFeedback}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-lg transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>{loading ? "Memuat..." : "Muat Ulang Data"}</span>
+          </button>
+
+          <Link
+            href="/ingest"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white text-xs font-semibold rounded-lg transition"
+          >
+            <UploadCloud className="w-3.5 h-3.5" /> Muat Dataset
+          </Link>
+
+          <Link
+            href="/predict"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+          >
+            <Flame className="w-3.5 h-3.5" /> Input Prediksi Manual
+          </Link>
+        </div>
       </div>
 
       {backendError && (
-        <div className="bg-amber-950/60 border border-amber-500/50 p-4 rounded-xl text-amber-200 text-xs flex items-center justify-between gap-3">
+        <div className="bg-amber-50 dark:bg-zinc-950 border border-amber-300 dark:border-amber-700 px-3 py-2.5 rounded-lg text-amber-900 dark:text-amber-300 text-xs flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
             <span>
-              <strong>Server Backend (:8000) Offline:</strong> Menampilkan data simulasi satelit nasional. Jalankan server dengan:{" "}
-              <code className="bg-black/50 px-2 py-0.5 rounded font-mono text-emerald-300">cd backend; python run.py</code>
+              <strong>Backend (:8000) Offline:</strong> Menampilkan data simulasi nasional.
             </span>
           </div>
           <button
             onClick={fetchData}
-            className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold text-xs whitespace-nowrap"
+            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-semibold text-xs whitespace-nowrap"
           >
             Coba Lagi
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="liquid-glass-card rounded-2xl p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between text-emerald-300/80 text-xs font-semibold uppercase tracking-wider">
-            <span>Total Hotspot Nasional</span>
-            <Layers className="w-4 h-4 text-emerald-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-zinc-200 dark:border-zinc-800 pb-3 gap-y-3 divide-x-0 sm:divide-x divide-zinc-200 dark:divide-zinc-800">
+        <div className="pr-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Total Hotspot Nasional
           </div>
-          <div className="mt-3 text-3xl font-extrabold text-white font-mono">{stats.total_hotspots.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-emerald-100/60">Terdeteksi di Sabang s.d. Merauke</div>
-        </div>
-
-        <div className="liquid-glass-card rounded-2xl p-5 border-red-500/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 rounded-bl-full" />
-          <div className="flex items-center justify-between text-red-400 text-xs font-semibold uppercase tracking-wider">
-            <span>High Risk (Prioritas)</span>
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-          </div>
-          <div className="mt-3 text-3xl font-extrabold text-red-400 font-mono">{stats.high_risk_count.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-red-200/60">
-            FRP &ge; 15.0 MW atau &Delta;T &ge; 25.0 K (Prob &ge; 0.50)
+          <div className="text-2xl font-extrabold text-zinc-950 dark:text-white font-mono mt-0.5">
+            {loading ? "..." : stats.total_hotspots.toLocaleString()}
           </div>
         </div>
 
-        <div className="liquid-glass-card rounded-2xl p-5 border-emerald-500/30 relative overflow-hidden">
-          <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Low Risk (Rutin)</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="sm:px-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+            High Risk (Prioritas)
           </div>
-          <div className="mt-3 text-3xl font-extrabold text-emerald-300 font-mono">{stats.low_risk_count.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-emerald-100/60">Pemantauan satelit berkala</div>
+          <div className="text-2xl font-extrabold text-red-600 dark:text-red-400 font-mono mt-0.5">
+            {loading ? "..." : stats.high_risk_count.toLocaleString()}
+          </div>
         </div>
 
-        <div className="liquid-glass-card rounded-2xl p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between text-amber-400 text-xs font-semibold uppercase tracking-wider">
-            <span>Antrean Audit & Tugas</span>
-            <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+        <div className="sm:px-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+            Low Risk (Rutin)
           </div>
-          <div className="mt-3 text-3xl font-extrabold text-amber-300 font-mono">
-            {stats.pending_audit_high_risk.toLocaleString()}
+          <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono mt-0.5">
+            {loading ? "..." : stats.low_risk_count.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs">
-            <Link href="/priority-list" className="text-emerald-400 hover:text-emerald-300 font-semibold hover:underline flex items-center gap-1">
-              Buka Lembar Surat Tugas &rarr;
-            </Link>
+        </div>
+
+        <div className="sm:pl-4 flex items-end justify-between gap-2">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Antrean Audit
+            </div>
+            <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-mono mt-0.5">
+              {loading ? "..." : stats.pending_audit_high_risk.toLocaleString()}
+            </div>
           </div>
+          <Link href="/priority-list" className="text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-semibold pb-1">
+            Surat Tugas &rarr;
+          </Link>
         </div>
       </div>
 
-      <div className="liquid-glass p-5 rounded-2xl border border-emerald-500/25 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-emerald-400" />
-              Sebaran Spasial Titik Panas Seluruh Indonesia
-            </h2>
-            <span className="text-[11px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-mono">
-              Leaflet • 38 Provinsi
-            </span>
-          </div>
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Peta Sebaran Spasial Titik Panas</span>
+          </h2>
 
-          <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-emerald-500/20 text-xs font-medium">
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium">
             <button
               onClick={() => setSelectedRisk("ALL")}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-2.5 py-1 rounded-md transition-colors ${
                 selectedRisk === "ALL"
-                  ? "bg-emerald-500/30 text-emerald-200 font-bold border border-emerald-500/40"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-zinc-950 text-white dark:bg-white dark:text-black font-bold"
+                  : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
               }`}
             >
-              Semua Titik ({hotspots.length})
+              Semua ({hotspots.length})
             </button>
             <button
               onClick={() => setSelectedRisk("HIGH RISK")}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                 selectedRisk === "HIGH RISK"
-                  ? "bg-red-500/30 text-red-300 font-bold border border-red-500/40"
-                  : "text-red-400 hover:bg-red-500/10"
+                  ? "bg-red-600 text-white font-bold"
+                  : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_6px_#EF4444]" />
+              <span className="w-2 h-2 rounded-full bg-current" />
               High Risk ({stats.high_risk_count})
             </button>
             <button
               onClick={() => setSelectedRisk("LOW RISK")}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                 selectedRisk === "LOW RISK"
-                  ? "bg-emerald-500/30 text-emerald-300 font-bold border border-emerald-500/40"
-                  : "text-emerald-400 hover:bg-emerald-500/10"
+                  ? "bg-emerald-600 text-white font-bold"
+                  : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]" />
+              <span className="w-2 h-2 rounded-full bg-current" />
               Low Risk ({stats.low_risk_count})
             </button>
           </div>

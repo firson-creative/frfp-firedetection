@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "FRFP — Fire Risk Foresight & Prioritization (ANN-MLP)",
@@ -14,22 +15,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className="min-h-screen text-gray-100 flex flex-col bg-[#030d0b]">
-        <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {children}
-        </main>
-        <footer className="liquid-glass border-t border-emerald-500/20 py-5 text-center text-xs text-emerald-200/60 mt-12">
-          <div className="max-w-7xl mx-auto px-4 space-y-1">
-            <p className="font-semibold text-emerald-300">
-              © 2026 FRFP — Fire Risk Foresight & Prioritization | Skala Nasional (Sabang s.d. Merauke)
-            </p>
-            <p className="text-[11px] text-gray-400">
-              Inovasi Model ANN-MLP (TensorFlow / Scikit-Learn + FastAPI + Next.js) • Deteksi Realtime Satelit NASA FIRMS VIIRS 375m
-            </p>
-          </div>
-        </footer>
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&family=Momo+Trust+Display&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen bg-white text-zinc-950 dark:bg-black dark:text-zinc-50 font-sans">
+        <ThemeProvider>
+          <AppShell>{children}</AppShell>
+        </ThemeProvider>
       </body>
     </html>
   );

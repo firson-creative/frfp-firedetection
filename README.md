@@ -17,9 +17,9 @@ Sistem full-stack terintegrasi untuk mengklasifikasikan titik panas satelit NASA
 3. **Konversi Waktu Satelit Otomatis:**
    - Menghitung waktu lokal Indonesia (**WIB, WITA, WIT**) secara dinamis berdasarkan bujur titik api.
    - Indikator orbit siang/malam (☀️ Siang / 🌙 Malam).
-4. **Smart Hybrid Near-Realtime (NRT) Auto-Sync:**
-   - Mendukung API MAP_KEY NASA FIRMS live streaming dan simulator cerdas dari dataset lokal `fire_nrt_SV-C2_829694.csv`.
-   - Sakelar live stream periodik otomatis dan tombol *Sync NRT Now*.
+4. **Pengolahan Dataset Lokal & Input Manual:**
+   - Mendukung pemrosesan batch CSV dari dataset NASA FIRMS yang sudah diunduh (`/ingest`) dan pemuatan dataset sampel wilayah Indonesia.
+   - Mendukung input parameter titik panas secara manual melalui form prediksi cepat (`/predict`).
 5. **Akselerasi & Fleksibilitas Audit:**
    - Uji prediksi cepat instan (`/predict`).
    - Ingesti batch CSV satelit dengan opsi penggantian data lama (`/ingest`).
@@ -34,7 +34,7 @@ FRFP/
 ├── ai_engine/          # Pelatihan model ANN-MLP (TensorFlow / Scikit-Learn) & artifact .pkl
 ├── backend/            # FastAPI v2.0 REST API, geo timezone service, SQLite DB, model inference
 ├── frontend/           # Next.js 14+ (App Router), Tailwind CSS, React-Leaflet, Emerald Liquid Glass
-├── data/               # Dataset raw NASA FIRMS (fire_archive & fire_nrt)
+├── data/               # Dataset CSV NASA FIRMS yang sudah diunduh & sampel wilayah Indonesia
 ├── notebooks/          # Google Colab / Jupyter Notebook SiAgni-ANN untuk tugas kuliah AI (Semester 3)
 ├── run_system.bat      # 1-Click Runner: Menjalankan Backend (:8000) & Frontend (:3000)
 ├── run_frontend.bat    # Runner khusus Frontend Next.js (:3000)
